@@ -1,0 +1,12 @@
+# Mix
+/_build/
+/deps/
+*.ez
+
+# Generated
+erl_crash.dump
+
+# KERTO data (local-only)
+.kerto/graph.etf
+.kerto/occurrences/
+.kerto/kerto.sock
