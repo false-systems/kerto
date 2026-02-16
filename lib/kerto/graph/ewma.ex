@@ -15,9 +15,9 @@ defmodule Kerto.Graph.EWMA do
   """
   @spec update(float(), float()) :: float()
   def update(current, observation)
-      when is_float(current) and is_float(observation)
-      and current >= 0.0 and current <= 1.0
-      and observation >= 0.0 and observation <= 1.0 do
+      when is_float(current) and is_float(observation) and
+             current >= 0.0 and current <= 1.0 and
+             observation >= 0.0 and observation <= 1.0 do
     @alpha * observation + (1.0 - @alpha) * current
   end
 
@@ -26,9 +26,9 @@ defmodule Kerto.Graph.EWMA do
   """
   @spec decay(float(), float()) :: float()
   def decay(weight, factor \\ @decay_factor)
-      when is_float(weight) and is_float(factor)
-      and weight >= 0.0 and weight <= 1.0
-      and factor >= 0.0 and factor <= 1.0 do
+      when is_float(weight) and is_float(factor) and
+             weight >= 0.0 and weight <= 1.0 and
+             factor >= 0.0 and factor <= 1.0 do
     weight * factor
   end
 

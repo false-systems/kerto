@@ -45,10 +45,11 @@ defmodule Kerto.Graph.Node do
   @spec observe(t(), float(), String.t()) :: t()
   def observe(%__MODULE__{} = node, confidence, ulid)
       when is_float(confidence) and is_binary(ulid) do
-    %{node |
-      relevance: EWMA.update(node.relevance, confidence),
-      observations: node.observations + 1,
-      last_seen: ulid
+    %{
+      node
+      | relevance: EWMA.update(node.relevance, confidence),
+        observations: node.observations + 1,
+        last_seen: ulid
     }
   end
 

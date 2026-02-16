@@ -9,8 +9,26 @@ defmodule Kerto.Graph.Relationship do
 
   alias Kerto.Graph.{EWMA, RelationType}
 
-  @enforce_keys [:source, :target, :relation, :weight, :observations, :first_seen, :last_seen, :evidence]
-  defstruct [:source, :target, :relation, :weight, :observations, :first_seen, :last_seen, :evidence]
+  @enforce_keys [
+    :source,
+    :target,
+    :relation,
+    :weight,
+    :observations,
+    :first_seen,
+    :last_seen,
+    :evidence
+  ]
+  defstruct [
+    :source,
+    :target,
+    :relation,
+    :weight,
+    :observations,
+    :first_seen,
+    :last_seen,
+    :evidence
+  ]
 
   @type t :: %__MODULE__{
           source: String.t(),
@@ -45,11 +63,12 @@ defmodule Kerto.Graph.Relationship do
   @spec reinforce(t(), float(), String.t(), String.t()) :: t()
   def reinforce(%__MODULE__{} = rel, confidence, ulid, evidence_text)
       when is_float(confidence) and is_binary(ulid) and is_binary(evidence_text) do
-    %{rel |
-      weight: EWMA.update(rel.weight, confidence),
-      observations: rel.observations + 1,
-      last_seen: ulid,
-      evidence: rel.evidence ++ [evidence_text]
+    %{
+      rel
+      | weight: EWMA.update(rel.weight, confidence),
+        observations: rel.observations + 1,
+        last_seen: ulid,
+        evidence: rel.evidence ++ [evidence_text]
     }
   end
 

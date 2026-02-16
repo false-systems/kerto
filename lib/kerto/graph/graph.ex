@@ -43,7 +43,15 @@ defmodule Kerto.Graph.Graph do
 
   @spec upsert_relationship(t(), String.t(), atom(), String.t(), float(), String.t(), String.t()) ::
           {t(), Relationship.t()}
-  def upsert_relationship(%__MODULE__{} = graph, source_id, relation, target_id, confidence, ulid, evidence_text) do
+  def upsert_relationship(
+        %__MODULE__{} = graph,
+        source_id,
+        relation,
+        target_id,
+        confidence,
+        ulid,
+        evidence_text
+      ) do
     key = {source_id, relation, target_id}
 
     case Map.get(graph.relationships, key) do

@@ -46,7 +46,18 @@ defmodule Kerto.Graph.GraphTest do
       {graph, _} = Graph.upsert_node(graph, :file, "login_test.go", 0.8, "01JABC")
       source_id = Identity.compute_id(:file, "auth.go")
       target_id = Identity.compute_id(:file, "login_test.go")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "CI linked")
+
+      {graph, _} =
+        Graph.upsert_relationship(
+          graph,
+          source_id,
+          :breaks,
+          target_id,
+          0.8,
+          "01JABC",
+          "CI linked"
+        )
+
       assert Graph.relationship_count(graph) == 1
     end
 
@@ -55,8 +66,13 @@ defmodule Kerto.Graph.GraphTest do
       {graph, _} = Graph.upsert_node(graph, :file, "login_test.go", 0.8, "01JABC")
       source_id = Identity.compute_id(:file, "auth.go")
       target_id = Identity.compute_id(:file, "login_test.go")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "first")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.9, "01JDEF", "second")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "first")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.9, "01JDEF", "second")
+
       assert Graph.relationship_count(graph) == 1
     end
 
@@ -65,8 +81,13 @@ defmodule Kerto.Graph.GraphTest do
       {graph, _} = Graph.upsert_node(graph, :file, "login_test.go", 0.8, "01JABC")
       source_id = Identity.compute_id(:file, "auth.go")
       target_id = Identity.compute_id(:file, "login_test.go")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "first")
-      {_graph, rel} = Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.9, "01JDEF", "second")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "first")
+
+      {_graph, rel} =
+        Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.9, "01JDEF", "second")
+
       assert rel.observations == 2
       assert rel.evidence == ["first", "second"]
     end
@@ -93,8 +114,12 @@ defmodule Kerto.Graph.GraphTest do
       source_id = Identity.compute_id(:file, "auth.go")
       target1 = Identity.compute_id(:file, "login_test.go")
       target2 = Identity.compute_id(:file, "session.go")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :breaks, target1, 0.8, "01JABC", "e1")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :depends_on, target2, 0.7, "01JABC", "e2")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, source_id, :breaks, target1, 0.8, "01JABC", "e1")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, source_id, :depends_on, target2, 0.7, "01JABC", "e2")
 
       rels = Graph.neighbors(graph, source_id, :outgoing)
       assert length(rels) == 2
@@ -105,7 +130,9 @@ defmodule Kerto.Graph.GraphTest do
       {graph, _} = Graph.upsert_node(graph, :file, "login_test.go", 0.8, "01JABC")
       source_id = Identity.compute_id(:file, "auth.go")
       target_id = Identity.compute_id(:file, "login_test.go")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "e1")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "e1")
 
       rels = Graph.neighbors(graph, target_id, :incoming)
       assert length(rels) == 1
@@ -119,7 +146,9 @@ defmodule Kerto.Graph.GraphTest do
       {graph, _} = Graph.upsert_node(graph, :file, "test.go", 0.8, "01JABC")
       source_id = Identity.compute_id(:file, "auth.go")
       target_id = Identity.compute_id(:file, "test.go")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "e")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "e")
 
       decayed = Graph.decay_all(graph, 0.5)
 
@@ -133,7 +162,9 @@ defmodule Kerto.Graph.GraphTest do
       {graph, _} = Graph.upsert_node(graph, :file, "test.go", 0.8, "01JABC")
       source_id = Identity.compute_id(:file, "auth.go")
       target_id = Identity.compute_id(:file, "test.go")
-      {graph, _} = Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "e")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, source_id, :breaks, target_id, 0.8, "01JABC", "e")
 
       # Aggressive decay to kill the relationship
       decayed = Enum.reduce(1..100, graph, fn _, g -> Graph.decay_all(g, 0.8) end)
