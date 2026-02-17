@@ -4,7 +4,7 @@
 
 **Your project has a story. KERTO remembers it.**
 
-Like CLAUDE.md but it writes itself and gets smarter every day.
+Like CLAUDE.md but it writes itself, gets smarter every day, and shares knowledge across your team.
 
 ## The Problem
 
@@ -42,6 +42,7 @@ kerto context auth.go
 - **Content-addressed identity** — same file from 20 agents = one node
 - **Evidence accumulates** — multiple sources saying the same thing = higher confidence
 - **Math-based forgetting** — old knowledge fades, recent knowledge stays sharp
+- **Distributed mesh** — BEAM nodes share knowledge via mTLS, no central server
 
 ```
 High confidence (0.8+):
@@ -54,6 +55,18 @@ Fading (0.3-0.5):
 Dying (< 0.1):
   old_api  ──depends_on──→ legacy_db  (0.07, last seen 2mo ago)
 ```
+
+## Team Mesh
+
+KERTO nodes connect directly over BEAM distribution with mutual TLS. No central server. Knowledge flows as occurrences — each node ingests independently, graphs converge automatically.
+
+```
+Kerto@dev-a ←──mTLS/BEAM──→ Kerto@dev-b
+     ↑                            ↑
+  local CI / git / agents      local CI / git / agents
+```
+
+Dev A discovers "auth.go breaks login_test" → syncs to Dev B in seconds → Dev B's AI agent knows before touching auth.go. No Slack message needed.
 
 ## Install
 
@@ -68,18 +81,29 @@ kerto init              # scan git history, build initial graph
 kerto context <file>    # what do I know about this file?
 kerto learn ...         # agent writes back a discovery
 kerto status            # show graph health
+
+# team mesh
+kerto team init         # create team CA
+kerto mesh start        # connect to peers via mDNS + mTLS
+kerto mesh status       # show connected peers, sync state
 ```
 
 KERTO also runs as an **MCP server** — Claude Code, Cursor, and any MCP-compatible tool discover it automatically. Zero integration work.
 
 ## Architecture
 
-Built in Elixir on the BEAM. Pure functional domain layer, OTP for concurrency, ETS for speed.
+Built in Elixir on the BEAM. Pure functional domain layer, OTP for concurrency, ETS for speed, BEAM distribution for mesh.
 
-- **Level 0:** Pure domain — graph, EWMA, identity (zero deps, 83 tests)
-- **Level 1:** Ingestion + Rendering (occurrence parsing, context generation)
-- **Level 2:** Infrastructure (ETS, persistence, decay timer)
-- **Level 3:** Interface (CLI, MCP server, Unix socket daemon)
+```
+Level 0: Graph           — Pure domain (EWMA, identity, graph ops)
+Level 1: Ingestion       — Occurrences → graph ops
+         Rendering       — Graph → natural language for agents
+Level 2: Engine          — ETS store, decay timer, occurrence log
+Level 3: Mesh            — mTLS identity, sync protocol, peer discovery
+Level 4: Interface       — CLI, MCP server, application
+```
+
+243 tests. Zero `map[string]interface{}` equivalent. Dependencies point inward — no exceptions.
 
 ## License
 

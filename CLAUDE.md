@@ -1,18 +1,21 @@
-# KERTO — Local Knowledge Graph for AI Agents
+# KERTO — Distributed Knowledge Graph for AI Agents
 
 > Read design docs at `docs/design/` for full context.
 
 ## Architecture
 
-4-level dependency hierarchy. No circular dependencies, no shortcuts.
+5-level dependency hierarchy. Dependencies point inward. No exceptions.
 
 ```
-Level 0: lib/kerto/graph/         — ZERO deps, pure functions, 83 tests
-Level 1: lib/kerto/ingestion/     — Graph only (occurrence → graph ops)
+Level 0: lib/kerto/graph/         — ZERO deps, pure domain (98 tests)
+Level 1: lib/kerto/ingestion/     — Graph only (occurrence → extraction ops)
          lib/kerto/rendering/     — Graph only (graph → natural language)
-Level 2: lib/kerto/infrastructure/ — Graph + L1 (ETS, persistence, timers)
-Level 3: lib/kerto/interface/     — All above (CLI, MCP, application)
+Level 2: lib/kerto/engine/        — L0 + L1 (ETS store, decay timer, occurrence log)
+Level 3: lib/kerto/mesh/          — L0-L2 (mTLS identity, sync protocol, peer discovery)
+Level 4: lib/kerto/interface/     — All above (CLI, MCP, application)
 ```
+
+243 tests, 0 failures.
 
 ## TDD Workflow (Mandatory)
 
@@ -51,15 +54,21 @@ sykli          # runs format → compile → test (also pre-commit hook)
 | Identity | `Kerto.Graph.Identity` | Content-addressed ID (BLAKE2b) |
 | Node | `Kerto.Graph.Node` | Knowledge entity with relevance decay |
 | Relationship | `Kerto.Graph.Relationship` | Weighted edge with evidence list |
-| Graph | `Kerto.Graph.Graph` | Upsert, query, decay_all, prune |
+| Graph | `Kerto.Graph.Graph` | Upsert, query, subgraph BFS, decay_all, prune |
 | NodeKind | `Kerto.Graph.NodeKind` | :file, :module, :pattern, :decision, :error, :concept |
-| RelationType | `Kerto.Graph.RelationType` | :breaks, :caused_by, :triggers, etc. |
+| RelationType | `Kerto.Graph.RelationType` | :breaks, :caused_by, :triggers, :deployed_to, etc. |
+| Extraction | `Kerto.Ingestion.Extraction` | Occurrence → ExtractionOps dispatcher |
+| Renderer | `Kerto.Rendering.Renderer` | Graph → natural language (Caution/Knowledge/Structure) |
+| Mesh.Identity | `Kerto.Mesh.Identity` | ECDSA P-256 keypairs, PEM, fingerprinting |
+| Mesh.Authority | `Kerto.Mesh.Authority` | Team CA: init, sign CSR, verify certs |
+| Mesh.Sync | `Kerto.Mesh.Sync` | Occurrence-based sync protocol, ULID sync points |
 
 ## Anti-Patterns (Instant Rejection)
 
-- `IO.puts` in Level 0/1/2
+- `IO.puts` in Level 0/1
 - Bare maps `%{}` for domain data
 - `String.to_atom/1` on user input
-- `:ets` in Level 0
+- `:ets` in Level 0 or Level 1
 - `try/rescue` in domain code
 - Mocking domain functions (they're pure — test directly)
+- Circular dependencies between levels
