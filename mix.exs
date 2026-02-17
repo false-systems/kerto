@@ -14,13 +14,14 @@ defmodule Kerto.MixProject do
 
   def application do
     [
-      extra_applications: [:logger, :crypto]
+      extra_applications: [:logger, :crypto, :ssl, :public_key]
     ]
   end
 
   defp deps do
     [
-      {:jason, "~> 1.4"}
+      {:jason, "~> 1.4"},
+      {:x509, "~> 0.9.2"}
     ]
   end
 end
