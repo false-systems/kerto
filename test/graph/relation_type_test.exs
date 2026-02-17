@@ -30,8 +30,8 @@ defmodule Kerto.Graph.RelationTypeTest do
   end
 
   describe "all/0" do
-    test "returns all nine types" do
-      assert length(RelationType.all()) == 9
+    test "returns all ten types" do
+      assert length(RelationType.all()) == 10
     end
 
     test "returns atoms" do

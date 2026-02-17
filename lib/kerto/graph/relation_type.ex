@@ -10,6 +10,7 @@ defmodule Kerto.Graph.RelationType do
     :caused_by,
     :triggers,
     :depends_on,
+    :deployed_to,
     :part_of,
     :learned,
     :decided,
