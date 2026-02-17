@@ -171,4 +171,111 @@ defmodule Kerto.Graph.GraphTest do
       assert Graph.relationship_count(decayed) == 0
     end
   end
+
+  describe "subgraph/3" do
+    setup %{graph: graph} do
+      # Build a small graph: A -> B -> C -> D, A -> E
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "c.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "d.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :module, "tests", 0.8, "01J001")
+
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      c = Identity.compute_id(:file, "c.go")
+      d = Identity.compute_id(:file, "d.go")
+      e = Identity.compute_id(:module, "tests")
+
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+      {graph, _} = Graph.upsert_relationship(graph, b, :breaks, c, 0.8, "01J001", "e2")
+      {graph, _} = Graph.upsert_relationship(graph, c, :breaks, d, 0.8, "01J001", "e3")
+      {graph, _} = Graph.upsert_relationship(graph, a, :depends_on, e, 0.8, "01J001", "e4")
+
+      {:ok, graph: graph, ids: %{a: a, b: b, c: c, d: d, e: e}}
+    end
+
+    test "returns root node and immediate neighbors at depth 1", %{graph: graph, ids: ids} do
+      {nodes, rels} = Graph.subgraph(graph, ids.a, depth: 1)
+      node_ids = Enum.map(nodes, & &1.id) |> MapSet.new()
+
+      assert MapSet.member?(node_ids, ids.a)
+      assert MapSet.member?(node_ids, ids.b)
+      assert MapSet.member?(node_ids, ids.e)
+      assert MapSet.size(node_ids) == 3
+      assert length(rels) == 2
+    end
+
+    test "traverses to depth 2", %{graph: graph, ids: ids} do
+      {nodes, rels} = Graph.subgraph(graph, ids.a, depth: 2)
+      node_ids = Enum.map(nodes, & &1.id) |> MapSet.new()
+
+      assert MapSet.member?(node_ids, ids.a)
+      assert MapSet.member?(node_ids, ids.b)
+      assert MapSet.member?(node_ids, ids.c)
+      assert MapSet.member?(node_ids, ids.e)
+      assert MapSet.size(node_ids) == 4
+      assert length(rels) == 3
+    end
+
+    test "returns empty for missing node", %{graph: graph} do
+      {nodes, rels} = Graph.subgraph(graph, "nonexistent", depth: 2)
+      assert nodes == []
+      assert rels == []
+    end
+
+    test "filters relationships below min_weight", %{graph: graph, ids: ids} do
+      # Add a weak relationship
+      {graph, _} = Graph.upsert_node(graph, :file, "weak.go", 0.8, "01J001")
+      weak_id = Identity.compute_id(:file, "weak.go")
+
+      {graph, rel} =
+        Graph.upsert_relationship(graph, ids.a, :learned, weak_id, 0.1, "01J001", "weak")
+
+      # Weaken it heavily so weight is very low
+      weakened = Kerto.Graph.Relationship.weaken(rel, 0.01)
+      key = {ids.a, :learned, weak_id}
+      graph = %{graph | relationships: Map.put(graph.relationships, key, weakened)}
+
+      {nodes, _rels} = Graph.subgraph(graph, ids.a, depth: 1, min_weight: 0.1)
+      node_ids = Enum.map(nodes, & &1.id) |> MapSet.new()
+
+      refute MapSet.member?(node_ids, weak_id)
+    end
+
+    test "depth 0 returns only root node", %{graph: graph, ids: ids} do
+      {nodes, rels} = Graph.subgraph(graph, ids.a, depth: 0)
+      assert length(nodes) == 1
+      assert hd(nodes).id == ids.a
+      assert rels == []
+    end
+
+    test "follows both outgoing and incoming edges", %{graph: graph, ids: ids} do
+      # Query from B — should find A (incoming) and C (outgoing)
+      {nodes, _rels} = Graph.subgraph(graph, ids.b, depth: 1)
+      node_ids = Enum.map(nodes, & &1.id) |> MapSet.new()
+
+      assert MapSet.member?(node_ids, ids.a)
+      assert MapSet.member?(node_ids, ids.b)
+      assert MapSet.member?(node_ids, ids.c)
+    end
+
+    test "does not revisit nodes", %{graph: graph, ids: ids} do
+      # Add a cycle: E -> A
+      {graph, _} =
+        Graph.upsert_relationship(graph, ids.e, :triggers, ids.a, 0.8, "01J001", "cycle")
+
+      {nodes, _rels} = Graph.subgraph(graph, ids.a, depth: 3)
+      node_ids = Enum.map(nodes, & &1.id)
+
+      # No duplicates
+      assert length(node_ids) == length(Enum.uniq(node_ids))
+    end
+
+    test "default min_weight is 0.0", %{graph: graph, ids: ids} do
+      {nodes, _rels} = Graph.subgraph(graph, ids.a, depth: 1)
+      # All neighbors included regardless of weight
+      assert length(nodes) == 3
+    end
+  end
 end
