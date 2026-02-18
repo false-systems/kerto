@@ -119,6 +119,12 @@ defmodule Kerto.Engine.StoreTest do
       assert {:ok, _} = Store.get_node(store, :file, "remote.go")
       assert {:ok, _} = Store.get_node(store, :module, "api")
     end
+
+    test "crashes on unknown operation type", %{store: store} do
+      ops = [{:unknown_op, %{some: :data}}]
+
+      assert catch_exit(Store.apply_ops(store, ops, "01JINVALID"))
+    end
   end
 
   describe "node_count/1 and relationship_count/1" do
