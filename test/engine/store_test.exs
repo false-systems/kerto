@@ -100,6 +100,11 @@ defmodule Kerto.Engine.StoreTest do
       graph = Store.get_graph(store)
       assert Graph.relationship_count(graph) == 0
     end
+
+    test "decay on empty store is safe", %{store: store} do
+      assert :ok = Store.decay(store, 0.95)
+      assert Store.node_count(store) == 0
+    end
   end
 
   describe "apply_ops/3 (for mesh replay)" do

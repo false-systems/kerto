@@ -1,9 +1,9 @@
 defmodule Kerto.Engine.Store do
   @moduledoc """
-  Owns the ETS graph table. Serializes writes, exposes concurrent reads.
+  Owns the in-memory graph and serializes writes via GenServer.
 
-  The graph lives in ETS, not GenServer state — ETS survives process
-  crashes via the heir pattern. The GenServer is just a write serializer.
+  All mutations go through this process to ensure serialized updates.
+  Read operations are exposed through the GenServer API.
   """
 
   use GenServer

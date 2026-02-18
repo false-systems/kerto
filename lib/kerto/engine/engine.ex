@@ -49,6 +49,7 @@ defmodule Kerto.Engine do
   def ingest(engine \\ __MODULE__, occurrence) do
     OccurrenceLog.append(child_name(engine, :log), occurrence)
     Store.ingest(child_name(engine, :store), occurrence)
+    :ok
   end
 
   @spec get_node(atom(), atom(), String.t()) :: {:ok, map()} | :error

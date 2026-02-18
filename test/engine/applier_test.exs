@@ -171,6 +171,17 @@ defmodule Kerto.Engine.ApplierTest do
     end
   end
 
+  describe "apply_ops/3 with unknown operation" do
+    test "raises FunctionClauseError" do
+      graph = Graph.new()
+      ops = [{:unknown_op, %{some: "data"}}]
+
+      assert_raise(FunctionClauseError, fn ->
+        Applier.apply_ops(graph, ops, "01JABC")
+      end)
+    end
+  end
+
   describe "apply_ops/3 full extraction pipeline" do
     test "applies CI failure extraction ops end-to-end" do
       alias Kerto.Ingestion.{Extraction, Occurrence, Source}

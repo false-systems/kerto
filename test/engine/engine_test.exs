@@ -105,4 +105,27 @@ defmodule Kerto.Engine.EngineTest do
       assert after_decay.relevance < before.relevance
     end
   end
+
+  describe "supervision" do
+    test "store survives decay process crash" do
+      occ = make_occurrence("ci.run.failed", %{files: ["auth.go"], task: "test"}, "01JABC")
+      Engine.ingest(:test_engine, occ)
+
+      # Kill the decay process
+      decay_pid = Process.whereis(:"test_engine.decay")
+      assert is_pid(decay_pid)
+      Process.exit(decay_pid, :kill)
+
+      # Wait for supervisor to restart it
+      Process.sleep(50)
+
+      # Store still works
+      assert {:ok, _node} = Engine.get_node(:test_engine, :file, "auth.go")
+
+      # Decay process was restarted
+      new_decay_pid = Process.whereis(:"test_engine.decay")
+      assert is_pid(new_decay_pid)
+      assert new_decay_pid != decay_pid
+    end
+  end
 end
