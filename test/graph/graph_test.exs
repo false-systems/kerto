@@ -279,6 +279,39 @@ defmodule Kerto.Graph.GraphTest do
     end
   end
 
+  describe "list_nodes/2" do
+    test "returns all nodes when no filter", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :module, "api", 0.6, "01J001")
+
+      nodes = Graph.list_nodes(graph)
+      assert length(nodes) == 2
+    end
+
+    test "filters by kind", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :module, "api", 0.6, "01J001")
+
+      nodes = Graph.list_nodes(graph, kind: :file)
+      assert length(nodes) == 1
+      assert hd(nodes).kind == :file
+    end
+
+    test "sorts by relevance descending", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "low.go", 0.2, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "high.go", 0.9, "01J002")
+      # Observe high.go again to boost relevance
+      {graph, _} = Graph.upsert_node(graph, :file, "high.go", 0.9, "01J003")
+
+      nodes = Graph.list_nodes(graph, kind: :file)
+      assert hd(nodes).name == "high.go"
+    end
+
+    test "returns empty list for empty graph", %{graph: graph} do
+      assert Graph.list_nodes(graph) == []
+    end
+  end
+
   describe "delete_node/2" do
     test "removes node and all its relationships", %{graph: graph} do
       {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")

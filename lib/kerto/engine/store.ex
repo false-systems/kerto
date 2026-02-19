@@ -8,7 +8,7 @@ defmodule Kerto.Engine.Store do
 
   use GenServer
 
-  alias Kerto.Engine.Applier
+  alias Kerto.Engine.{Applier, Persistence}
   alias Kerto.Graph.{Graph, Identity}
   alias Kerto.Ingestion.Extraction
 
@@ -81,8 +81,17 @@ defmodule Kerto.Engine.Store do
   # --- Server Callbacks ---
 
   @impl true
-  def init(_opts) do
-    {:ok, %{graph: Graph.new()}}
+  def init(opts) do
+    persistence_path = Keyword.get(opts, :persistence_path)
+
+    graph =
+      if persistence_path do
+        Persistence.load(Persistence.path(persistence_path))
+      else
+        Graph.new()
+      end
+
+    {:ok, %{graph: graph, persistence_path: persistence_path}}
   end
 
   @impl true
@@ -90,7 +99,9 @@ defmodule Kerto.Engine.Store do
     ops = Extraction.extract(occurrence)
     ulid = occurrence.source.ulid
     graph = Applier.apply_ops(state.graph, ops, ulid)
-    {:reply, :ok, %{state | graph: graph}}
+    state = %{state | graph: graph}
+    maybe_persist(state)
+    {:reply, :ok, state}
   end
 
   def handle_call({:get_node, kind, name}, _from, state) do
@@ -104,12 +115,16 @@ defmodule Kerto.Engine.Store do
 
   def handle_call({:decay, factor}, _from, state) do
     graph = Graph.decay_all(state.graph, factor)
-    {:reply, :ok, %{state | graph: graph}}
+    state = %{state | graph: graph}
+    maybe_persist(state)
+    {:reply, :ok, state}
   end
 
   def handle_call({:apply_ops, ops, ulid}, _from, state) do
     graph = Applier.apply_ops(state.graph, ops, ulid)
-    {:reply, :ok, %{state | graph: graph}}
+    state = %{state | graph: graph}
+    maybe_persist(state)
+    {:reply, :ok, state}
   end
 
   def handle_call(:node_count, _from, state) do
@@ -124,8 +139,13 @@ defmodule Kerto.Engine.Store do
     id = Identity.compute_id(kind, name)
 
     case Graph.delete_node(state.graph, id) do
-      {graph, :ok} -> {:reply, :ok, %{state | graph: graph}}
-      {_graph, :error} -> {:reply, {:error, :not_found}, state}
+      {graph, :ok} ->
+        state = %{state | graph: graph}
+        maybe_persist(state)
+        {:reply, :ok, state}
+
+      {_graph, :error} ->
+        {:reply, {:error, :not_found}, state}
     end
   end
 
@@ -139,8 +159,19 @@ defmodule Kerto.Engine.Store do
     key = {src_id, relation, tgt_id}
 
     case Graph.delete_relationship(state.graph, key) do
-      {graph, :ok} -> {:reply, :ok, %{state | graph: graph}}
-      {_graph, :error} -> {:reply, {:error, :not_found}, state}
+      {graph, :ok} ->
+        state = %{state | graph: graph}
+        maybe_persist(state)
+        {:reply, :ok, state}
+
+      {_graph, :error} ->
+        {:reply, {:error, :not_found}, state}
     end
+  end
+
+  defp maybe_persist(%{persistence_path: nil}), do: :ok
+
+  defp maybe_persist(%{persistence_path: path, graph: graph}) do
+    Persistence.save(graph, Persistence.path(path))
   end
 end

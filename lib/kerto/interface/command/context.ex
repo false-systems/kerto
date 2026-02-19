@@ -3,7 +3,7 @@ defmodule Kerto.Interface.Command.Context do
   Queries the knowledge graph for an entity and returns rendered context.
   """
 
-  alias Kerto.Interface.{Response, Validate}
+  alias Kerto.Interface.{Response, Suggest, Validate}
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, args) do
@@ -16,11 +16,18 @@ defmodule Kerto.Interface.Command.Context do
            {:ok, opts} <- build_opts(args) do
         case Kerto.Engine.context(engine, kind, name, opts) do
           {:ok, text} -> Response.success(text)
-          {:error, :not_found} -> Response.error(:not_found)
+          {:error, :not_found} -> Response.error(not_found_message(engine, kind, name))
         end
       else
         {:error, reason} -> Response.error(reason)
       end
+    end
+  end
+
+  defp not_found_message(engine, kind, name) do
+    case Suggest.similar_names(engine, kind, name) do
+      [] -> "not found: #{name} (#{kind})"
+      similar -> "not found: #{name} (#{kind}). Similar: #{Enum.join(similar, ", ")}"
     end
   end
 

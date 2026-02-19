@@ -31,10 +31,18 @@ defmodule Kerto.Interface.Command.ContextTest do
     assert resp.data =~ "auth.go"
   end
 
-  test "returns error for unknown entity", %{engine: engine} do
+  test "returns error for unknown entity with hint", %{engine: engine} do
     resp = Context.execute(engine, %{name: "nope.go", kind: :file})
     refute resp.ok
-    assert resp.error == :not_found
+    assert resp.error =~ "not found"
+  end
+
+  test "context command includes hint on not_found", %{engine: engine} do
+    resp = Context.execute(engine, %{name: "auth", kind: :file})
+    refute resp.ok
+    assert resp.error =~ "not found: auth (file)"
+    assert resp.error =~ "Similar:"
+    assert resp.error =~ "auth.go"
   end
 
   test "passes depth and min_weight options", %{engine: engine} do

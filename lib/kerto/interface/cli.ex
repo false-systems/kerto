@@ -8,7 +8,7 @@ defmodule Kerto.Interface.CLI do
   `run/1` is the testable core — no System.halt, no Application.ensure_all_started.
   """
 
-  alias Kerto.Interface.{Dispatcher, Output, Parser}
+  alias Kerto.Interface.{Dispatcher, Help, Output, Parser}
 
   @engine :kerto_engine
 
@@ -23,6 +23,11 @@ defmodule Kerto.Interface.CLI do
   end
 
   @spec run([String.t()]) :: :ok | :error
+  def run(["--help" | _]), do: help(nil)
+  def run(["-h" | _]), do: help(nil)
+  def run([cmd, "--help" | _]), do: help(cmd)
+  def run([cmd, "-h" | _]), do: help(cmd)
+
   def run(args) do
     case Parser.parse(args) do
       {:error, reason} ->
@@ -35,5 +40,10 @@ defmodule Kerto.Interface.CLI do
         Output.print(response, format)
         if response.ok, do: :ok, else: :error
     end
+  end
+
+  defp help(command) do
+    IO.puts(Help.render(command))
+    :ok
   end
 end

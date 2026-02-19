@@ -28,6 +28,7 @@ defmodule Kerto.Engine do
     max_occ = Keyword.get(opts, :max_occurrences, Config.get(:max_occurrences))
     decay_interval = Keyword.get(opts, :decay_interval_ms, Config.get(:decay_interval_ms))
     decay_factor = Keyword.get(opts, :decay_factor, Config.get(:decay_factor))
+    persistence_path = Keyword.get(opts, :persistence_path)
 
     log_name = child_name(prefix, :log)
     store_name = child_name(prefix, :store)
@@ -35,7 +36,7 @@ defmodule Kerto.Engine do
 
     children = [
       {OccurrenceLog, name: log_name, max: max_occ},
-      {Store, name: store_name},
+      {Store, name: store_name, persistence_path: persistence_path},
       {Decay,
        name: decay_name, store: store_name, interval_ms: decay_interval, factor: decay_factor}
     ]
@@ -110,6 +111,12 @@ defmodule Kerto.Engine do
       target_kind,
       target_name
     )
+  end
+
+  @spec list_nodes(atom(), keyword()) :: [map()]
+  def list_nodes(engine \\ __MODULE__, opts \\ []) do
+    graph = get_graph(engine)
+    Kerto.Graph.Graph.list_nodes(graph, opts)
   end
 
   @spec context(atom(), atom(), String.t(), keyword()) :: {:ok, String.t()} | {:error, :not_found}
