@@ -14,6 +14,7 @@ defmodule Kerto.MixProject do
 
   def application do
     [
+      mod: {Kerto.Application, []},
       extra_applications: [:logger, :crypto, :ssl, :public_key]
     ]
   end
