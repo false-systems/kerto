@@ -5,6 +5,7 @@
 
 # Generated
 erl_crash.dump
+/kerto
 
 # KERTO data (local-only)
 .kerto/graph.etf

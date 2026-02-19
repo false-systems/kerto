@@ -54,6 +54,27 @@ defmodule Kerto.Engine.Store do
     GenServer.call(server, :relationship_count)
   end
 
+  @spec delete_node(GenServer.server(), atom(), String.t()) :: :ok | {:error, :not_found}
+  def delete_node(server \\ __MODULE__, kind, name) do
+    GenServer.call(server, {:delete_node, kind, name})
+  end
+
+  @spec delete_relationship(GenServer.server(), atom(), String.t(), atom(), atom(), String.t()) ::
+          :ok | {:error, :not_found}
+  def delete_relationship(
+        server \\ __MODULE__,
+        source_kind,
+        source_name,
+        relation,
+        target_kind,
+        target_name
+      ) do
+    GenServer.call(
+      server,
+      {:delete_relationship, source_kind, source_name, relation, target_kind, target_name}
+    )
+  end
+
   @spec dump(GenServer.server()) :: Graph.t()
   def dump(server \\ __MODULE__), do: get_graph(server)
 
@@ -97,5 +118,29 @@ defmodule Kerto.Engine.Store do
 
   def handle_call(:relationship_count, _from, state) do
     {:reply, Graph.relationship_count(state.graph), state}
+  end
+
+  def handle_call({:delete_node, kind, name}, _from, state) do
+    id = Identity.compute_id(kind, name)
+
+    case Graph.delete_node(state.graph, id) do
+      {graph, :ok} -> {:reply, :ok, %{state | graph: graph}}
+      {_graph, :error} -> {:reply, {:error, :not_found}, state}
+    end
+  end
+
+  def handle_call(
+        {:delete_relationship, src_kind, src_name, relation, tgt_kind, tgt_name},
+        _from,
+        state
+      ) do
+    src_id = Identity.compute_id(src_kind, src_name)
+    tgt_id = Identity.compute_id(tgt_kind, tgt_name)
+    key = {src_id, relation, tgt_id}
+
+    case Graph.delete_relationship(state.graph, key) do
+      {graph, :ok} -> {:reply, :ok, %{state | graph: graph}}
+      {_graph, :error} -> {:reply, {:error, :not_found}, state}
+    end
   end
 end
