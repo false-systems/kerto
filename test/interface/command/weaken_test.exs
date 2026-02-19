@@ -48,4 +48,12 @@ defmodule Kerto.Interface.Command.WeakenTest do
     resp = Weaken.execute(engine, %{source: "auth.go", relation: :breaks})
     refute resp.ok
   end
+
+  test "returns error for invalid relation", %{engine: engine} do
+    resp =
+      Weaken.execute(engine, %{source: "auth.go", relation: :explodes, target: "test"})
+
+    refute resp.ok
+    assert resp.error =~ "relation"
+  end
 end

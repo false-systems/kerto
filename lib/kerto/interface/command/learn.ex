@@ -7,33 +7,41 @@ defmodule Kerto.Interface.Command.Learn do
   """
 
   alias Kerto.Ingestion.{Occurrence, Source}
-  alias Kerto.Interface.{Response, ULID}
+  alias Kerto.Interface.{Response, ULID, Validate}
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, args) do
     with {:ok, evidence} <- require_arg(args, :evidence),
-         {:ok, subject} <- require_arg(args, :subject) do
-      subject_kind = Map.get(args, :subject_kind, :file)
-
+         {:ok, subject} <- require_arg(args, :subject),
+         {:ok, subject_kind} <- Validate.node_kind(Map.get(args, :subject_kind, :file)) do
       case Map.get(args, :target) do
         nil ->
           ingest_subject_only(engine, subject, subject_kind, evidence)
 
         target ->
-          target_kind = Map.get(args, :target_kind, :concept)
-          relation = Map.get(args, :relation, :learned)
-          confidence = Map.get(args, :confidence, 0.8)
-
-          ingest_learning(engine, %{
-            subject_name: subject,
-            subject_kind: subject_kind,
-            target_name: target,
-            target_kind: target_kind,
-            relation: relation,
-            evidence: evidence,
-            confidence: confidence
-          })
+          build_and_ingest_learning(engine, args, subject, subject_kind, target, evidence)
       end
+    else
+      %Response{ok: false} = resp -> resp
+      {:error, reason} -> Response.error(reason)
+    end
+  end
+
+  defp build_and_ingest_learning(engine, args, subject, subject_kind, target, evidence) do
+    with {:ok, target_kind} <- Validate.node_kind(Map.get(args, :target_kind, :concept)),
+         {:ok, relation} <- Validate.relation(Map.get(args, :relation, :learned)),
+         {:ok, confidence} <- Validate.float_val(Map.get(args, :confidence, 0.8), "confidence") do
+      ingest_learning(engine, %{
+        subject_name: subject,
+        subject_kind: subject_kind,
+        target_name: target,
+        target_kind: target_kind,
+        relation: relation,
+        evidence: evidence,
+        confidence: confidence
+      })
+    else
+      {:error, reason} -> Response.error(reason)
     end
   end
 

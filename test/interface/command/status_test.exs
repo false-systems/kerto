@@ -5,10 +5,9 @@ defmodule Kerto.Interface.Command.StatusTest do
   alias Kerto.Ingestion.{Occurrence, Source}
 
   setup do
-    engine =
-      start_supervised!(
-        {Kerto.Engine, name: :test_status_engine, decay_interval_ms: :timer.hours(1)}
-      )
+    start_supervised!(
+      {Kerto.Engine, name: :test_status_engine, decay_interval_ms: :timer.hours(1)}
+    )
 
     %{engine: :test_status_engine}
   end

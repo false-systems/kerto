@@ -29,7 +29,7 @@ Command Layer               — the real API
 Engine (Level 2)            — the stateful core
 ```
 
-Every command is a function: `execute(engine, args) → {:ok, data} | {:error, reason}`. No IO. No formatting. No arg parsing. The same command works from CLI, MCP, Unix socket, or ExUnit tests.
+Every command is a function: `execute(engine, args) :: Response.t()` (a `%Kerto.Interface.Response{}` struct). No IO. No formatting. No arg parsing. The same command works from CLI, MCP, Unix socket, or ExUnit tests.
 
 ### 2. Domain Verbs, Not CRUD
 
@@ -371,7 +371,7 @@ Deleted relationship auth.go --breaks--> login_test
 
 Must provide either `--node` or all of `--source/--relation/--target`.
 
-**Pipeline:** `Engine.delete_node/3` or `Engine.delete_relationship/5` (new Engine API).
+**Pipeline:** `Engine.delete_node/3` or `Engine.delete_relationship/6` (new Engine API).
 
 ---
 
@@ -557,7 +557,7 @@ defmodule Kerto.Interface.ULID do
 end
 ```
 
-26 characters, time-sortable, monotonic within millisecond. Used only at the interface boundary — domain code receives ULIDs as strings.
+26 characters, time-sortable, unique per generation. Used only at the interface boundary — domain code receives ULIDs as strings.
 
 ## Module Layout
 
@@ -597,7 +597,7 @@ def delete_node(engine \\ __MODULE__, kind, name)
 ```
 Removes the node and all relationships where it appears as source or target.
 
-### `Engine.delete_relationship/5`
+### `Engine.delete_relationship/6`
 ```elixir
 @spec delete_relationship(atom(), atom(), String.t(), atom(), atom(), String.t()) :: :ok | {:error, :not_found}
 def delete_relationship(engine \\ __MODULE__, source_kind, source_name, relation, target_kind, target_name)

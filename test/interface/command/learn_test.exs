@@ -60,4 +60,18 @@ defmodule Kerto.Interface.Command.LearnTest do
     refute resp.ok
     assert resp.error =~ "evidence"
   end
+
+  test "returns error for invalid relation", %{engine: engine} do
+    args = %{evidence: "x", subject: "a", target: "b", relation: :explodes}
+    resp = Learn.execute(engine, args)
+    refute resp.ok
+    assert resp.error =~ "relation"
+  end
+
+  test "returns error for invalid node kind", %{engine: engine} do
+    args = %{evidence: "x", subject: "a", subject_kind: :spaceship}
+    resp = Learn.execute(engine, args)
+    refute resp.ok
+    assert resp.error =~ "node kind"
+  end
 end

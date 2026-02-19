@@ -3,50 +3,57 @@ defmodule Kerto.Interface.Command.Delete do
   Hard-removes a node or relationship from the graph.
   """
 
-  alias Kerto.Interface.Response
+  alias Kerto.Interface.{Response, Validate}
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, args) do
-    cond do
-      Map.has_key?(args, :node) ->
-        delete_node(engine, args)
+    node = Map.get(args, :node)
+    source = Map.get(args, :source)
+    relation = Map.get(args, :relation)
+    target = Map.get(args, :target)
 
-      Map.has_key?(args, :source) and Map.has_key?(args, :relation) and
-          Map.has_key?(args, :target) ->
-        delete_relationship(engine, args)
+    cond do
+      not is_nil(node) ->
+        delete_node(engine, node, args)
+
+      not is_nil(source) and not is_nil(relation) and not is_nil(target) ->
+        delete_relationship(engine, source, relation, target, args)
 
       true ->
         Response.error("specify --node or --source/--relation/--target")
     end
   end
 
-  defp delete_node(engine, args) do
-    kind = Map.get(args, :kind, :file)
+  defp delete_node(engine, node, args) do
+    case Validate.node_kind(Map.get(args, :kind, :file)) do
+      {:ok, kind} ->
+        case Kerto.Engine.delete_node(engine, kind, node) do
+          :ok -> Response.success(:ok)
+          {:error, :not_found} -> Response.error(:not_found)
+        end
 
-    case Kerto.Engine.delete_node(engine, kind, args.node) do
-      :ok -> Response.success(:ok)
-      {:error, :not_found} -> Response.error(:not_found)
+      {:error, reason} ->
+        Response.error(reason)
     end
   end
 
-  defp delete_relationship(engine, args) do
-    source_kind = Map.get(args, :source_kind, :file)
-    target_kind = Map.get(args, :target_kind, :file)
-    relation = to_atom(args.relation)
-
-    case Kerto.Engine.delete_relationship(
-           engine,
-           source_kind,
-           args.source,
-           relation,
-           target_kind,
-           args.target
-         ) do
-      :ok -> Response.success(:ok)
-      {:error, :not_found} -> Response.error(:not_found)
+  defp delete_relationship(engine, source, relation, target, args) do
+    with {:ok, source_kind} <- Validate.node_kind(Map.get(args, :source_kind, :file)),
+         {:ok, target_kind} <- Validate.node_kind(Map.get(args, :target_kind, :file)),
+         {:ok, relation_atom} <- Validate.relation(relation) do
+      case Kerto.Engine.delete_relationship(
+             engine,
+             source_kind,
+             source,
+             relation_atom,
+             target_kind,
+             target
+           ) do
+        :ok -> Response.success(:ok)
+        {:error, :not_found} -> Response.error(:not_found)
+      end
+    else
+      {:error, reason} -> Response.error(reason)
     end
   end
-
-  defp to_atom(val) when is_atom(val), do: val
-  defp to_atom(val) when is_binary(val), do: String.to_existing_atom(val)
 end

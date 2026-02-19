@@ -28,7 +28,7 @@ defmodule Kerto.Interface.DispatcherTest do
     assert resp.error =~ "unknown command"
   end
 
-  test "all registered commands are dispatchable", %{engine: engine} do
+  test "all registered commands are dispatchable", %{engine: _engine} do
     commands = Dispatcher.commands()
     assert "status" in commands
     assert "context" in commands

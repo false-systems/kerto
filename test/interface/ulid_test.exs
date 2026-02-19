@@ -22,7 +22,7 @@ defmodule Kerto.Interface.ULIDTest do
 
     test "generates sortable values (later is greater)" do
       ulid1 = ULID.generate()
-      Process.sleep(2)
+      Process.sleep(20)
       ulid2 = ULID.generate()
       assert ulid2 > ulid1
     end

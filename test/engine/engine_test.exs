@@ -125,10 +125,22 @@ defmodule Kerto.Engine.EngineTest do
     test "removes a specific relationship" do
       occ = make_occurrence("ci.run.failed", %{files: ["auth.go"], task: "test"}, "01JABC")
       Engine.ingest(:test_engine, occ)
-      assert Engine.relationship_count(:test_engine) >= 1
+      count_before = Engine.relationship_count(:test_engine)
+      assert count_before >= 1
 
-      Engine.delete_relationship(:test_engine, :file, "auth.go", :breaks, :module, "test")
-      # Relationship removed but nodes remain
+      assert :ok =
+               Engine.delete_relationship(
+                 :test_engine,
+                 :file,
+                 "auth.go",
+                 :breaks,
+                 :module,
+                 "test"
+               )
+
+      count_after = Engine.relationship_count(:test_engine)
+      assert count_after < count_before
+      # Nodes remain after relationship removal
       assert {:ok, _} = Engine.get_node(:test_engine, :file, "auth.go")
     end
   end
