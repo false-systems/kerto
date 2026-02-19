@@ -278,4 +278,52 @@ defmodule Kerto.Graph.GraphTest do
       assert length(nodes) == 3
     end
   end
+
+  describe "delete_node/2" do
+    test "removes node and all its relationships", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+
+      {graph, :ok} = Graph.delete_node(graph, a)
+      assert Graph.node_count(graph) == 1
+      assert Graph.relationship_count(graph) == 0
+    end
+
+    test "returns error for missing node", %{graph: graph} do
+      assert {^graph, :error} = Graph.delete_node(graph, "nonexistent")
+    end
+
+    test "removes relationships where node is target", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+
+      {graph, :ok} = Graph.delete_node(graph, b)
+      assert Graph.node_count(graph) == 1
+      assert Graph.relationship_count(graph) == 0
+    end
+  end
+
+  describe "delete_relationship/2" do
+    test "removes a specific relationship", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+
+      {graph, :ok} = Graph.delete_relationship(graph, {a, :breaks, b})
+      assert Graph.relationship_count(graph) == 0
+      assert Graph.node_count(graph) == 2
+    end
+
+    test "returns error for missing relationship", %{graph: graph} do
+      assert {^graph, :error} = Graph.delete_relationship(graph, {"x", :breaks, "y"})
+    end
+  end
 end

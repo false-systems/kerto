@@ -106,6 +106,48 @@ defmodule Kerto.Engine.EngineTest do
     end
   end
 
+  describe "delete_node/3" do
+    test "removes node and its relationships" do
+      occ = make_occurrence("ci.run.failed", %{files: ["auth.go"], task: "test"}, "01JABC")
+      Engine.ingest(:test_engine, occ)
+      assert {:ok, _} = Engine.get_node(:test_engine, :file, "auth.go")
+
+      assert :ok = Engine.delete_node(:test_engine, :file, "auth.go")
+      assert :error = Engine.get_node(:test_engine, :file, "auth.go")
+    end
+
+    test "returns error for missing node" do
+      assert {:error, :not_found} = Engine.delete_node(:test_engine, :file, "nope.go")
+    end
+  end
+
+  describe "delete_relationship/6" do
+    test "removes a specific relationship" do
+      occ = make_occurrence("ci.run.failed", %{files: ["auth.go"], task: "test"}, "01JABC")
+      Engine.ingest(:test_engine, occ)
+      assert Engine.relationship_count(:test_engine) >= 1
+
+      Engine.delete_relationship(:test_engine, :file, "auth.go", :breaks, :module, "test")
+      # Relationship removed but nodes remain
+      assert {:ok, _} = Engine.get_node(:test_engine, :file, "auth.go")
+    end
+  end
+
+  describe "context/4" do
+    test "returns rendered context for known entity" do
+      occ = make_occurrence("ci.run.failed", %{files: ["auth.go"], task: "test"}, "01JABC")
+      Engine.ingest(:test_engine, occ)
+
+      assert {:ok, text} = Engine.context(:test_engine, :file, "auth.go")
+      assert text =~ "auth.go"
+      assert text =~ "file"
+    end
+
+    test "returns error for unknown entity" do
+      assert {:error, :not_found} = Engine.context(:test_engine, :file, "nope.go")
+    end
+  end
+
   describe "supervision" do
     test "store survives decay process crash" do
       occ = make_occurrence("ci.run.failed", %{files: ["auth.go"], task: "test"}, "01JABC")

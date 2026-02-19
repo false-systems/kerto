@@ -141,6 +141,37 @@ defmodule Kerto.Graph.Graph do
     end
   end
 
+  @spec delete_node(t(), String.t()) :: {t(), :ok | :error}
+  def delete_node(%__MODULE__{} = graph, node_id) do
+    case Map.get(graph.nodes, node_id) do
+      nil ->
+        {graph, :error}
+
+      _node ->
+        nodes = Map.delete(graph.nodes, node_id)
+
+        relationships =
+          graph.relationships
+          |> Enum.reject(fn {_key, rel} ->
+            rel.source == node_id or rel.target == node_id
+          end)
+          |> Map.new()
+
+        {%{graph | nodes: nodes, relationships: relationships}, :ok}
+    end
+  end
+
+  @spec delete_relationship(t(), relationship_key()) :: {t(), :ok | :error}
+  def delete_relationship(%__MODULE__{} = graph, key) do
+    case Map.get(graph.relationships, key) do
+      nil ->
+        {graph, :error}
+
+      _rel ->
+        {%{graph | relationships: Map.delete(graph.relationships, key)}, :ok}
+    end
+  end
+
   @spec decay_all(t(), float()) :: t()
   def decay_all(%__MODULE__{} = graph, factor) when is_float(factor) do
     nodes =

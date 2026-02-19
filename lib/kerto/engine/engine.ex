@@ -87,6 +87,41 @@ defmodule Kerto.Engine do
     Store.relationship_count(child_name(engine, :store))
   end
 
+  @spec delete_node(atom(), atom(), String.t()) :: :ok | {:error, :not_found}
+  def delete_node(engine \\ __MODULE__, kind, name) do
+    Store.delete_node(child_name(engine, :store), kind, name)
+  end
+
+  @spec delete_relationship(atom(), atom(), String.t(), atom(), atom(), String.t()) ::
+          :ok | {:error, :not_found}
+  def delete_relationship(
+        engine \\ __MODULE__,
+        source_kind,
+        source_name,
+        relation,
+        target_kind,
+        target_name
+      ) do
+    Store.delete_relationship(
+      child_name(engine, :store),
+      source_kind,
+      source_name,
+      relation,
+      target_kind,
+      target_name
+    )
+  end
+
+  @spec context(atom(), atom(), String.t(), keyword()) :: {:ok, String.t()} | {:error, :not_found}
+  def context(engine \\ __MODULE__, kind, name, opts \\ []) do
+    graph = get_graph(engine)
+
+    case Kerto.Rendering.Query.query_context(graph, kind, name, "", opts) do
+      {:ok, ctx} -> {:ok, Kerto.Rendering.Renderer.render(ctx)}
+      error -> error
+    end
+  end
+
   @spec status(atom()) :: map()
   def status(engine \\ __MODULE__) do
     %{
