@@ -15,7 +15,10 @@ defmodule Kerto.Interface.Dispatcher do
     "graph" => Command.Graph,
     "decay" => Command.Decay,
     "weaken" => Command.Weaken,
-    "delete" => Command.Delete
+    "delete" => Command.Delete,
+    "init" => Command.Init,
+    "start" => Command.Start,
+    "stop" => Command.Stop
   }
 
   @spec dispatch(String.t(), atom(), map()) :: Response.t()

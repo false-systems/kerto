@@ -29,10 +29,18 @@ defmodule Kerto.Interface.Command.DeleteTest do
     assert :error = Kerto.Engine.get_node(engine, :file, "auth.go")
   end
 
-  test "returns error for missing node", %{engine: engine} do
+  test "returns error for missing node with hint", %{engine: engine} do
     resp = Delete.execute(engine, %{node: "nope.go", kind: :file})
     refute resp.ok
-    assert resp.error == :not_found
+    assert resp.error =~ "not found"
+  end
+
+  test "delete command includes hint on not_found", %{engine: engine} do
+    resp = Delete.execute(engine, %{node: "auth", kind: :file})
+    refute resp.ok
+    assert resp.error =~ "not found: auth (file)"
+    assert resp.error =~ "Similar:"
+    assert resp.error =~ "auth.go"
   end
 
   test "deletes a relationship", %{engine: engine} do

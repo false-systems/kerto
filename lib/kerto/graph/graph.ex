@@ -65,6 +65,16 @@ defmodule Kerto.Graph.Graph do
     end
   end
 
+  @spec list_nodes(t(), keyword()) :: [Node.t()]
+  def list_nodes(%__MODULE__{nodes: nodes}, opts \\ []) do
+    kind = Keyword.get(opts, :kind)
+
+    nodes
+    |> Map.values()
+    |> then(fn ns -> if kind, do: Enum.filter(ns, &(&1.kind == kind)), else: ns end)
+    |> Enum.sort_by(& &1.relevance, :desc)
+  end
+
   @spec get_node(t(), String.t()) :: {:ok, Node.t()} | :error
   def get_node(%__MODULE__{} = graph, id) do
     case Map.get(graph.nodes, id) do

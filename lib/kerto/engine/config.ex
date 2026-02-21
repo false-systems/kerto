@@ -13,7 +13,8 @@ defmodule Kerto.Engine.Config do
     death_threshold_edge: 0.05,
     death_threshold_node: 0.01,
     max_occurrences: 1024,
-    snapshot_interval_ms: :timer.minutes(30)
+    snapshot_interval_ms: :timer.minutes(30),
+    persistence_path: ".kerto"
   }
 
   @spec defaults() :: map()

@@ -45,6 +45,20 @@ defmodule Kerto.Interface.CLITest do
     assert_received :error
   end
 
+  test "run/1 --help returns global help and :ok" do
+    output = capture_io(fn -> send(self(), CLI.run(["--help"])) end)
+    assert_received :ok
+    assert output =~ "Usage:"
+    assert output =~ "status"
+    assert output =~ "context"
+  end
+
+  test "run/1 command --help returns command help" do
+    output = capture_io(fn -> send(self(), CLI.run(["learn", "--help"])) end)
+    assert_received :ok
+    assert output =~ "--subject"
+  end
+
   test "run/1 ingest and context round-trip" do
     capture_io(fn ->
       CLI.run([

@@ -3,7 +3,7 @@ defmodule Kerto.Interface.Command.Delete do
   Hard-removes a node or relationship from the graph.
   """
 
-  alias Kerto.Interface.{Response, Validate}
+  alias Kerto.Interface.{Response, Suggest, Validate}
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, args) do
@@ -29,11 +29,18 @@ defmodule Kerto.Interface.Command.Delete do
       {:ok, kind} ->
         case Kerto.Engine.delete_node(engine, kind, node) do
           :ok -> Response.success(:ok)
-          {:error, :not_found} -> Response.error(:not_found)
+          {:error, :not_found} -> Response.error(not_found_message(engine, kind, node))
         end
 
       {:error, reason} ->
         Response.error(reason)
+    end
+  end
+
+  defp not_found_message(engine, kind, name) do
+    case Suggest.similar_names(engine, kind, name) do
+      [] -> "not found: #{name} (#{kind})"
+      similar -> "not found: #{name} (#{kind}). Similar: #{Enum.join(similar, ", ")}"
     end
   end
 
