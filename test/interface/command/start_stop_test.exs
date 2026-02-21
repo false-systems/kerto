@@ -69,4 +69,22 @@ defmodule Kerto.Interface.Command.StartStopTest do
     assert resp.ok == false
     assert resp.error =~ "cannot find"
   end
+
+  test "start cleans up stale PID file" do
+    File.write!(".kerto/kerto.pid", "999999999")
+    File.write!(".kerto/kerto.sock", "stale")
+
+    _resp = Start.execute(:unused, %{})
+
+    refute File.exists?(".kerto/kerto.pid")
+    refute File.exists?(".kerto/kerto.sock")
+  end
+
+  test "os_pid_alive?/1 detects dead PID" do
+    refute Start.os_pid_alive?("999999999")
+  end
+
+  test "os_pid_alive?/1 detects live PID" do
+    assert Start.os_pid_alive?(to_string(System.pid() |> String.trim()))
+  end
 end

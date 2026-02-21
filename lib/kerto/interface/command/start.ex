@@ -4,6 +4,7 @@ defmodule Kerto.Interface.Command.Start do
   alias Kerto.Interface.{DaemonClient, Response}
 
   @socket_path ".kerto/kerto.sock"
+  @pid_path ".kerto/kerto.pid"
   @max_wait_ms 5_000
   @poll_interval_ms 100
 
@@ -12,6 +13,8 @@ defmodule Kerto.Interface.Command.Start do
     if DaemonClient.daemon_running?(@socket_path) do
       Response.success("Daemon already running")
     else
+      cleanup_stale()
+
       case find_escript() do
         {:ok, escript} ->
           launch_daemon(escript)
@@ -19,6 +22,29 @@ defmodule Kerto.Interface.Command.Start do
         :error ->
           Response.error("cannot find kerto executable")
       end
+    end
+  end
+
+  defp cleanup_stale do
+    case File.read(@pid_path) do
+      {:ok, content} ->
+        pid_str = String.trim(content)
+
+        if pid_str != "" and not os_pid_alive?(pid_str) do
+          File.rm(@pid_path)
+          File.rm(@socket_path)
+        end
+
+      {:error, _} ->
+        :ok
+    end
+  end
+
+  @doc false
+  def os_pid_alive?(pid_str) do
+    case System.cmd("kill", ["-0", pid_str], stderr_to_stdout: true) do
+      {_, 0} -> true
+      _ -> false
     end
   end
 

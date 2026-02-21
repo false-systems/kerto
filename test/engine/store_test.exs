@@ -138,4 +138,26 @@ defmodule Kerto.Engine.StoreTest do
       assert Store.node_count(store) >= 1
     end
   end
+
+  describe "terminate/2" do
+    test "persists graph on shutdown" do
+      tmp = Path.join(System.tmp_dir!(), "kerto_store_term_#{System.unique_integer([:positive])}")
+      on_exit(fn -> File.rm_rf!(tmp) end)
+
+      store =
+        start_supervised!(
+          {Store, name: :test_store_terminate, persistence_path: tmp},
+          id: :store_terminate
+        )
+
+      occ = make_occurrence("ci.run.failed", %{files: ["term.go"], task: "test"}, "01JTERM")
+      Store.ingest(store, occ)
+      assert Store.node_count(store) >= 1
+
+      stop_supervised!(:store_terminate)
+
+      loaded = Kerto.Engine.Persistence.load(Kerto.Engine.Persistence.path(tmp))
+      assert Graph.node_count(loaded) >= 1
+    end
+  end
 end

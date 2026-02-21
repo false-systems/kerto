@@ -43,6 +43,7 @@ defmodule Kerto.Interface.ContextWriter do
 
   @impl true
   def init(opts) do
+    Process.flag(:trap_exit, true)
     engine = Keyword.fetch!(opts, :engine)
     path = Keyword.get(opts, :path, ".kerto/CONTEXT.md")
     debounce_ms = Keyword.get(opts, :debounce_ms, @default_debounce_ms)
@@ -65,6 +66,24 @@ defmodule Kerto.Interface.ContextWriter do
     File.write!(state.path, content)
 
     {:noreply, %{state | timer: nil}}
+  end
+
+  @impl true
+  def terminate(_reason, %{timer: timer} = state) when not is_nil(timer) do
+    Process.cancel_timer(timer)
+    flush_render(state)
+    :ok
+  end
+
+  def terminate(_reason, _state), do: :ok
+
+  defp flush_render(state) do
+    graph = Kerto.Engine.get_graph(state.engine)
+    content = render_full_context(graph)
+    state.path |> Path.dirname() |> File.mkdir_p!()
+    File.write!(state.path, content)
+  rescue
+    _ -> :ok
   end
 
   defp reset_timer(%{timer: old_timer} = state) do

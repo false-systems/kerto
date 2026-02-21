@@ -84,6 +84,35 @@ defmodule Kerto.Interface.ContextWriterTest do
     assert File.exists?(nested)
   end
 
+  test "flushes pending render on terminate", %{engine: engine, path: path} do
+    writer2 =
+      start_supervised!(
+        {ContextWriter,
+         engine: engine, path: path, debounce_ms: :timer.hours(1), name: :test_cw_flush},
+        id: :flush_writer
+      )
+
+    learn(engine, "flush test", "flush.go")
+    ContextWriter.notify_mutation(writer2)
+    stop_supervised!(:flush_writer)
+
+    assert File.exists?(path)
+    assert File.read!(path) =~ "flush.go"
+  end
+
+  test "terminate without pending timer is clean", %{engine: engine} do
+    start_supervised!(
+      {ContextWriter,
+       engine: engine,
+       path: Path.join(@test_dir, "no_timer.md"),
+       debounce_ms: 10,
+       name: :test_cw_no_timer},
+      id: :no_timer_writer
+    )
+
+    stop_supervised!(:no_timer_writer)
+  end
+
   test "limits to top 20 nodes by relevance" do
     graph =
       Enum.reduce(1..25, Kerto.Graph.Graph.new(), fn i, g ->

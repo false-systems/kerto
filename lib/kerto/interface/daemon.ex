@@ -54,6 +54,10 @@ defmodule Kerto.Interface.Daemon do
     {:noreply, state}
   end
 
+  def handle_info(:shutdown_requested, state) do
+    {:stop, :normal, state}
+  end
+
   def handle_info({:EXIT, _pid, _reason}, state) do
     {:noreply, state}
   end
@@ -75,7 +79,7 @@ defmodule Kerto.Interface.Daemon do
       case :gen_tcp.accept(listen) do
         {:ok, client} ->
           send(parent, :spawn_acceptor)
-          handle_client(client, engine, context_writer)
+          handle_client(client, engine, context_writer, parent)
 
         {:error, _} ->
           :ok
@@ -83,11 +87,12 @@ defmodule Kerto.Interface.Daemon do
     end)
   end
 
-  defp handle_client(client, engine, context_writer) do
+  defp handle_client(client, engine, context_writer, daemon_pid) do
     case :gen_tcp.recv(client, 0, 5_000) do
       {:ok, line} ->
-        response = dispatch_line(line, engine, context_writer)
+        {response, shutdown?} = dispatch_line(line, engine, context_writer)
         :gen_tcp.send(client, response <> "\n")
+        if shutdown?, do: send(daemon_pid, :shutdown_requested)
 
       {:error, _} ->
         :ok
@@ -99,17 +104,10 @@ defmodule Kerto.Interface.Daemon do
   defp dispatch_line(line, engine, context_writer) do
     case Protocol.decode_request(line) do
       {:error, reason} ->
-        Protocol.encode_response(Kerto.Interface.Response.error(reason))
+        {Protocol.encode_response(Kerto.Interface.Response.error(reason)), false}
 
       {"shutdown", _args} ->
-        response = Protocol.encode_response(Kerto.Interface.Response.success(:ok))
-
-        spawn(fn ->
-          Process.sleep(100)
-          System.stop(0)
-        end)
-
-        response
+        {Protocol.encode_response(Kerto.Interface.Response.success(:ok)), true}
 
       {command, args} ->
         response = Dispatcher.dispatch(command, engine, args)
@@ -118,7 +116,7 @@ defmodule Kerto.Interface.Daemon do
           ContextWriter.notify_mutation(context_writer)
         end
 
-        Protocol.encode_response(response)
+        {Protocol.encode_response(response), false}
     end
   end
 end

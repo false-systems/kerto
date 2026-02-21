@@ -82,6 +82,7 @@ defmodule Kerto.Engine.Store do
 
   @impl true
   def init(opts) do
+    Process.flag(:trap_exit, true)
     persistence_path = Keyword.get(opts, :persistence_path)
 
     graph =
@@ -167,6 +168,12 @@ defmodule Kerto.Engine.Store do
       {_graph, :error} ->
         {:reply, {:error, :not_found}, state}
     end
+  end
+
+  @impl true
+  def terminate(_reason, state) do
+    maybe_persist(state)
+    :ok
   end
 
   defp maybe_persist(%{persistence_path: nil}), do: :ok

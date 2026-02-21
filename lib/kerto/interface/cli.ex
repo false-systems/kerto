@@ -101,7 +101,7 @@ defmodule Kerto.Interface.CLI do
         name: Kerto.Interface.ContextWriter
       )
 
-    {:ok, _} =
+    {:ok, daemon} =
       Kerto.Interface.Daemon.start_link(
         socket_path: socket_path,
         engine: @engine,
@@ -109,7 +109,11 @@ defmodule Kerto.Interface.CLI do
         name: Kerto.Interface.Daemon
       )
 
-    Process.sleep(:infinity)
+    ref = Process.monitor(daemon)
+
+    receive do
+      {:DOWN, ^ref, :process, ^daemon, _reason} -> :ok
+    end
   end
 
   defp help(command) do

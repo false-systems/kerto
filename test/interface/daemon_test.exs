@@ -91,6 +91,31 @@ defmodule Kerto.Interface.DaemonTest do
     refute File.exists?(path)
   end
 
+  test "shutdown command stops daemon cleanly" do
+    socket_path = Path.join(@test_dir, "shutdown_test.sock")
+    engine = :"test_shutdown_engine_#{System.unique_integer([:positive])}"
+
+    start_supervised!({Kerto.Engine, name: engine, decay_interval_ms: :timer.hours(1)},
+      id: :shutdown_engine
+    )
+
+    daemon_name = :"test_shutdown_daemon_#{System.unique_integer([:positive])}"
+
+    start_supervised!(
+      {Daemon, socket_path: socket_path, engine: engine, name: daemon_name},
+      id: :shutdown_daemon
+    )
+
+    Process.sleep(50)
+    ref = Process.monitor(Process.whereis(daemon_name))
+
+    {:ok, response} = send_command(socket_path, "shutdown")
+    assert response["ok"] == true
+
+    assert_receive {:DOWN, ^ref, :process, _, :normal}, 1_000
+    refute File.exists?(socket_path)
+  end
+
   test "removes stale socket on init" do
     stale_path = Path.join(@test_dir, "stale.sock")
     File.write!(stale_path, "stale")
