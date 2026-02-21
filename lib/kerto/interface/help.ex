@@ -96,6 +96,30 @@ defmodule Kerto.Interface.Help do
         "kerto delete --node auth.go --kind file",
         "kerto delete --source auth.go --relation breaks --target test"
       ]
+    },
+    "init" => %{
+      description: "Initialize .kerto/ directory, .mcp.json, and .gitignore",
+      usage: "kerto init",
+      flags: [],
+      examples: ["kerto init"]
+    },
+    "start" => %{
+      description: "Start the kerto daemon in the background",
+      usage: "kerto start",
+      flags: [],
+      examples: ["kerto start"]
+    },
+    "stop" => %{
+      description: "Stop the running kerto daemon",
+      usage: "kerto stop",
+      flags: [],
+      examples: ["kerto stop"]
+    },
+    "mcp" => %{
+      description: "Start MCP server (JSON-RPC over stdio, used by Claude Code)",
+      usage: "kerto mcp",
+      flags: [],
+      examples: ["kerto mcp"]
     }
   }
 

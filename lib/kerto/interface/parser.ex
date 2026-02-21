@@ -44,7 +44,10 @@ defmodule Kerto.Interface.Parser do
       relation: :string,
       source_kind: :string,
       target_kind: :string
-    ]
+    ],
+    "init" => [],
+    "start" => [],
+    "stop" => []
   }
 
   @atom_fields ~w(kind format relation source_kind target_kind subject_kind)a
