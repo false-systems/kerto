@@ -113,7 +113,7 @@ defmodule Kerto.Engine do
     )
   end
 
-  @spec list_nodes(atom(), keyword()) :: [map()]
+  @spec list_nodes(atom(), keyword()) :: [Kerto.Graph.Node.t()]
   def list_nodes(engine \\ __MODULE__, opts \\ []) do
     graph = get_graph(engine)
     Kerto.Graph.Graph.list_nodes(graph, opts)

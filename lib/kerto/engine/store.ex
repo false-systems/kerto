@@ -179,6 +179,7 @@ defmodule Kerto.Engine.Store do
   defp maybe_persist(%{persistence_path: nil}), do: :ok
 
   defp maybe_persist(%{persistence_path: path, graph: graph}) do
-    Persistence.save(graph, Persistence.path(path))
+    _ = Persistence.save(graph, Persistence.path(path))
+    :ok
   end
 end

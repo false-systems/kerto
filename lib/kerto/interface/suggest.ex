@@ -6,7 +6,8 @@ defmodule Kerto.Interface.Suggest do
   @threshold 0.7
 
   @spec similar_names(atom(), atom(), String.t(), pos_integer()) :: [String.t()]
-  def similar_names(engine, kind, query, limit \\ 3) do
+  def similar_names(engine, kind, query, limit \\ 3)
+      when is_integer(limit) and limit > 0 do
     engine
     |> Kerto.Engine.list_nodes(kind: kind)
     |> Enum.map(fn node -> {node.name, String.jaro_distance(query, node.name)} end)

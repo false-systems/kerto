@@ -5,11 +5,19 @@ defmodule Kerto.Engine.Persistence do
 
   alias Kerto.Graph.Graph
 
-  @spec save(Graph.t(), String.t()) :: :ok
+  @spec save(Graph.t(), String.t()) :: :ok | {:error, term()}
   def save(%Graph{} = graph, path) do
-    path |> Path.dirname() |> File.mkdir_p!()
-    File.write!(path, :erlang.term_to_binary(graph))
-    :ok
+    dir = Path.dirname(path)
+
+    with :ok <- File.mkdir_p(dir),
+         :ok <- File.write(path, :erlang.term_to_binary(graph)) do
+      :ok
+    else
+      {:error, reason} ->
+        require Logger
+        Logger.warning("Persistence failed for #{path}: #{inspect(reason)}")
+        {:error, reason}
+    end
   end
 
   @spec load(String.t()) :: Graph.t()
@@ -31,7 +39,7 @@ defmodule Kerto.Engine.Persistence do
   end
 
   defp safe_binary_to_term(binary) do
-    :erlang.binary_to_term(binary)
+    :erlang.binary_to_term(binary, [:safe])
   rescue
     ArgumentError -> nil
   end
