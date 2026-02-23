@@ -11,3 +11,5 @@ erl_crash.dump
 .kerto/graph.etf
 .kerto/occurrences/
 .kerto/kerto.sock
+.kerto/kerto.pid
+.kerto/kerto.log

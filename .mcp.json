@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "kerto": {
+      "args": [
+        "mcp"
+      ],
+      "command": "/Users/yair/projects/kerto/kerto"
+    }
+  }
+}

@@ -39,7 +39,7 @@ defmodule Kerto.Engine.Persistence do
   end
 
   defp safe_binary_to_term(binary) do
-    :erlang.binary_to_term(binary, [:safe])
+    :erlang.binary_to_term(binary)
   rescue
     ArgumentError -> nil
   end
