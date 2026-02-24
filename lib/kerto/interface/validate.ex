@@ -41,4 +41,9 @@ defmodule Kerto.Interface.Validate do
   @spec integer_val(term(), String.t()) :: {:ok, integer()} | {:error, String.t()}
   def integer_val(val, _name) when is_integer(val), do: {:ok, val}
   def integer_val(_, name), do: {:error, "#{name} must be an integer"}
+
+  @spec confidence(term()) :: {:ok, float()} | {:error, String.t()}
+  def confidence(val) when is_float(val) and val >= 0.0 and val <= 1.0, do: {:ok, val}
+  def confidence(val) when is_integer(val) and val >= 0 and val <= 1, do: {:ok, val * 1.0}
+  def confidence(_), do: {:error, "confidence must be a number between 0.0 and 1.0"}
 end

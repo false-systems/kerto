@@ -55,4 +55,14 @@ defmodule Kerto.Interface.Command.IngestTest do
     refute resp.ok
     assert resp.error =~ "JSON"
   end
+
+  test "unknown data keys stay as strings, not atoms", %{engine: engine} do
+    args = %{
+      type: "ci.run.failed",
+      data: %{"files" => ["auth.go"], "task" => "test", "unknown_xyz_key" => "value"}
+    }
+
+    resp = Ingest.execute(engine, args)
+    assert resp.ok
+  end
 end

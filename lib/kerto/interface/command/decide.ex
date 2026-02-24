@@ -13,7 +13,7 @@ defmodule Kerto.Interface.Command.Decide do
          {:ok, target} <- require_arg(args, :target),
          {:ok, subject_kind} <- Validate.node_kind(Map.get(args, :subject_kind, :module)),
          {:ok, target_kind} <- Validate.node_kind(Map.get(args, :target_kind, :decision)),
-         {:ok, confidence} <- Validate.float_val(Map.get(args, :confidence, 0.9), "confidence") do
+         {:ok, confidence} <- Validate.confidence(Map.get(args, :confidence, 0.9)) do
       data = %{
         subject_name: subject,
         subject_kind: subject_kind,

@@ -61,4 +61,10 @@ defmodule Kerto.Engine.Applier do
         %{graph | relationships: Map.put(graph.relationships, key, weakened)}
     end
   end
+
+  defp apply_op(graph, {op_type, _attrs}, _ulid) do
+    require Logger
+    Logger.warning("Applier: skipping unknown op type: #{inspect(op_type)}")
+    graph
+  end
 end

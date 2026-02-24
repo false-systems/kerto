@@ -15,7 +15,7 @@ defmodule Kerto.Ingestion.Extractor.CiSuccess do
 
   @spec extract(Occurrence.t()) :: [Kerto.Ingestion.ExtractionOp.t()]
   def extract(%Occurrence{type: "ci.run.passed", data: data}) do
-    files = Map.get(data, :files, [])
+    files = data |> Map.get(:files, []) |> Enum.filter(&(is_binary(&1) and byte_size(&1) > 0))
     task = Map.fetch!(data, :task)
 
     case files do

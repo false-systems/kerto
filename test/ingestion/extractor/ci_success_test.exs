@@ -68,6 +68,13 @@ defmodule Kerto.Ingestion.Extractor.CiSuccessTest do
       assert weaken.target_kind == :module
     end
 
+    test "filters empty file names" do
+      occ = success_occurrence(%{files: ["auth.go", "", nil], task: "test"})
+      ops = CiSuccess.extract(occ)
+      file_nodes = for {:upsert_node, %{kind: :file} = attrs} <- ops, do: attrs.name
+      assert file_nodes == ["auth.go"]
+    end
+
     test "creates task module node" do
       occ = success_occurrence(%{files: ["auth.go"], task: "test"})
       ops = CiSuccess.extract(occ)

@@ -96,6 +96,44 @@ defmodule Kerto.Ingestion.Extractor.LearningTest do
       assert rel.evidence == "a.go timeout caused by slow DB"
     end
 
+    test "clamps confidence above 1.0" do
+      occ =
+        learning_occurrence(%{
+          subject_kind: :file,
+          subject_name: "a.go",
+          target_kind: :pattern,
+          target_name: "retry",
+          relation: :learned,
+          confidence: 1.5,
+          evidence: "test"
+        })
+
+      ops = Learning.extract(occ)
+
+      for {_op, attrs} <- ops do
+        assert attrs[:confidence] == nil or attrs.confidence <= 1.0
+      end
+    end
+
+    test "clamps negative confidence" do
+      occ =
+        learning_occurrence(%{
+          subject_kind: :file,
+          subject_name: "a.go",
+          target_kind: :pattern,
+          target_name: "retry",
+          relation: :learned,
+          confidence: -0.5,
+          evidence: "test"
+        })
+
+      ops = Learning.extract(occ)
+
+      for {_op, attrs} <- ops do
+        assert attrs[:confidence] == nil or attrs.confidence >= 0.0
+      end
+    end
+
     test "node confidence matches relationship confidence" do
       occ =
         learning_occurrence(%{

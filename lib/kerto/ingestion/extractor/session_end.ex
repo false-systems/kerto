@@ -16,7 +16,7 @@ defmodule Kerto.Ingestion.Extractor.SessionEnd do
   @spec extract(Occurrence.t()) :: [Kerto.Ingestion.ExtractionOp.t()]
   def extract(%Occurrence{type: "agent.session_end", data: data}) do
     summary = Map.get(data, :summary, "")
-    files = Map.get(data, :files, [])
+    files = data |> Map.get(:files, []) |> Enum.filter(&(is_binary(&1) and byte_size(&1) > 0))
     slug = slugify(summary)
 
     concept_node = {:upsert_node, %{kind: :concept, name: slug, confidence: @concept_confidence}}

@@ -7,15 +7,16 @@ defmodule Kerto.Ingestion.Extractor.CiFailure do
   defaults to 0.7 (CI failures are strong but not certain evidence).
   """
 
+  alias Kerto.Graph.EWMA
   alias Kerto.Ingestion.Occurrence
 
   @default_confidence 0.7
 
   @spec extract(Occurrence.t()) :: [Kerto.Ingestion.ExtractionOp.t()]
   def extract(%Occurrence{type: "ci.run.failed", data: data}) do
-    files = Map.get(data, :files, [])
+    files = data |> Map.get(:files, []) |> Enum.filter(&(is_binary(&1) and byte_size(&1) > 0))
     task = Map.fetch!(data, :task)
-    confidence = Map.get(data, :confidence, @default_confidence)
+    confidence = data |> Map.get(:confidence, @default_confidence) |> EWMA.clamp()
     error = Map.get(data, :error, "")
 
     evidence =

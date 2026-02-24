@@ -120,10 +120,11 @@ defmodule Kerto.Engine.StoreTest do
       assert {:ok, _} = Store.get_node(store, :module, "api")
     end
 
-    test "crashes on unknown operation type", %{store: store} do
+    test "handles unknown operation type gracefully", %{store: store} do
       ops = [{:unknown_op, %{some: :data}}]
 
-      assert catch_exit(Store.apply_ops(store, ops, "01JINVALID"))
+      assert :ok = Store.apply_ops(store, ops, "01JINVALID")
+      assert Store.node_count(store) == 0
     end
   end
 

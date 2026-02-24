@@ -56,6 +56,21 @@ defmodule Kerto.Engine.PersistenceTest do
       assert Graph.node_count(graph) == 0
     end
 
+    test "load logs warning for corrupt file", %{tmp: tmp} do
+      import ExUnit.CaptureLog
+
+      path = Persistence.path(tmp)
+      File.mkdir_p!(tmp)
+      File.write!(path, "not valid ETF data")
+
+      log =
+        capture_log(fn ->
+          Persistence.load(path)
+        end)
+
+      assert log =~ "Persistence: corrupt or incompatible data"
+    end
+
     test "save creates nested directories", %{tmp: tmp} do
       nested = Path.join([tmp, "deep", "nested"])
       path = Persistence.path(nested)

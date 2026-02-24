@@ -39,8 +39,11 @@ defmodule Kerto.Engine.Persistence do
   end
 
   defp safe_binary_to_term(binary) do
-    :erlang.binary_to_term(binary)
+    :erlang.binary_to_term(binary, [:safe])
   rescue
-    ArgumentError -> nil
+    ArgumentError ->
+      require Logger
+      Logger.warning("Persistence: corrupt or incompatible data, returning empty graph")
+      nil
   end
 end

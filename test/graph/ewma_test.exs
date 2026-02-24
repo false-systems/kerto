@@ -65,5 +65,13 @@ defmodule Kerto.Graph.EWMATest do
     test "passes through values in range" do
       assert EWMA.clamp(0.5) == 0.5
     end
+
+    test "clamps integer 1 to 1.0" do
+      assert EWMA.clamp(1) == 1.0
+    end
+
+    test "clamps negative integer to 0.0" do
+      assert EWMA.clamp(-1) == 0.0
+    end
   end
 end

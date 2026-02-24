@@ -13,7 +13,12 @@ defmodule Kerto.Ingestion.Extractor.FileEdit do
 
   @spec extract(Occurrence.t()) :: [Kerto.Ingestion.ExtractionOp.t()]
   def extract(%Occurrence{type: "agent.file_edit", data: data}) do
-    file = Map.get(data, :file, "")
-    [{:upsert_node, %{kind: :file, name: file, confidence: @confidence}}]
+    case Map.get(data, :file) do
+      file when is_binary(file) and byte_size(file) > 0 ->
+        [{:upsert_node, %{kind: :file, name: file, confidence: @confidence}}]
+
+      _ ->
+        []
+    end
   end
 end

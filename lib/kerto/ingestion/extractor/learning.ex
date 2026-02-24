@@ -7,13 +7,14 @@ defmodule Kerto.Ingestion.Extractor.Learning do
   Default confidence 0.8 — human-provided context is high-trust.
   """
 
+  alias Kerto.Graph.EWMA
   alias Kerto.Ingestion.Occurrence
 
   @default_confidence 0.8
 
   @spec extract(Occurrence.t()) :: [Kerto.Ingestion.ExtractionOp.t()]
   def extract(%Occurrence{type: "context.learning", data: data}) do
-    confidence = Map.get(data, :confidence, @default_confidence)
+    confidence = data |> Map.get(:confidence, @default_confidence) |> EWMA.clamp()
 
     subject_node =
       {:upsert_node, %{kind: data.subject_kind, name: data.subject_name, confidence: confidence}}
