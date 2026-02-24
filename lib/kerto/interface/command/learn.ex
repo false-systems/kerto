@@ -30,7 +30,7 @@ defmodule Kerto.Interface.Command.Learn do
   defp build_and_ingest_learning(engine, args, subject, subject_kind, target, evidence) do
     with {:ok, target_kind} <- Validate.node_kind(Map.get(args, :target_kind, :concept)),
          {:ok, relation} <- Validate.relation(Map.get(args, :relation, :learned)),
-         {:ok, confidence} <- Validate.float_val(Map.get(args, :confidence, 0.8), "confidence") do
+         {:ok, confidence} <- Validate.confidence(Map.get(args, :confidence, 0.8)) do
       ingest_learning(engine, %{
         subject_name: subject,
         subject_kind: subject_kind,

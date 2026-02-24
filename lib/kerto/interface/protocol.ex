@@ -8,7 +8,7 @@ defmodule Kerto.Interface.Protocol do
   @known_arg_keys ~w(
     kind name depth min_weight subject target relation
     subject_kind target_kind confidence evidence type data
-    source format factor node source_kind target_kind
+    source format factor node
     json summary files
   )a
 
