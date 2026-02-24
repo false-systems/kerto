@@ -103,6 +103,21 @@ defmodule Kerto.Interface.MCP do
         },
         required: ["source", "relation", "target"]
       }
+    },
+    %{
+      name: "kerto_hint",
+      description: "Get compact hints for files about to be edited",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          files: %{
+            type: "array",
+            items: %{type: "string"},
+            description: "File paths to get hints for"
+          }
+        },
+        required: ["files"]
+      }
     }
   ]
 
@@ -113,7 +128,8 @@ defmodule Kerto.Interface.MCP do
     "kerto_status" => "status",
     "kerto_graph" => "graph",
     "kerto_observe" => "observe",
-    "kerto_weaken" => "weaken"
+    "kerto_weaken" => "weaken",
+    "kerto_hint" => "hint"
   }
 
   @spec run(atom(), GenServer.server() | nil) :: no_return()

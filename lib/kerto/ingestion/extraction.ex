@@ -17,5 +17,15 @@ defmodule Kerto.Ingestion.Extraction do
   def extract(%Occurrence{type: "context.decision"} = occ), do: Extractor.Decision.extract(occ)
   def extract(%Occurrence{type: "agent.file_edit"} = occ), do: Extractor.FileEdit.extract(occ)
   def extract(%Occurrence{type: "agent.session_end"} = occ), do: Extractor.SessionEnd.extract(occ)
+
+  def extract(%Occurrence{type: "bootstrap.git_history"} = occ),
+    do: Extractor.GitHistory.extract(occ)
+
+  def extract(%Occurrence{type: "bootstrap.file_tree"} = occ), do: Extractor.FileTree.extract(occ)
+  def extract(%Occurrence{type: "agent.tool_error"} = occ), do: Extractor.ToolError.extract(occ)
+
+  def extract(%Occurrence{type: "agent.session_edits"} = occ),
+    do: Extractor.SessionEdits.extract(occ)
+
   def extract(%Occurrence{}), do: []
 end

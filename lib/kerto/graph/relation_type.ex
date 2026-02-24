@@ -15,7 +15,8 @@ defmodule Kerto.Graph.RelationType do
     :learned,
     :decided,
     :tried_failed,
-    :often_changes_with
+    :often_changes_with,
+    :edited_with
   ]
 
   @spec all() :: [atom()]

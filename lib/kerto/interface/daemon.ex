@@ -5,7 +5,7 @@ defmodule Kerto.Interface.Daemon do
 
   alias Kerto.Interface.{ContextWriter, Dispatcher, Protocol}
 
-  @mutating_commands ~w(learn decide ingest decay weaken delete)
+  @mutating_commands ~w(learn decide ingest decay weaken delete bootstrap flush-session)
 
   def start_link(opts) do
     name = Keyword.get(opts, :name, __MODULE__)
@@ -108,6 +108,16 @@ defmodule Kerto.Interface.Daemon do
 
       {"shutdown", _args} ->
         {Protocol.encode_response(Kerto.Interface.Response.success(:ok)), true}
+
+      {"register", args} ->
+        agent = Map.get(args, :agent, "unknown")
+        {:ok, session_id} = Kerto.Engine.register_session(engine, agent)
+        {Protocol.encode_response(Kerto.Interface.Response.success(session_id)), false}
+
+      {"deregister", args} ->
+        session_id = Map.get(args, :session, "")
+        Kerto.Engine.deregister_session(engine, session_id)
+        {Protocol.encode_response(Kerto.Interface.Response.success(:ok)), false}
 
       {command, args} ->
         response = Dispatcher.dispatch(command, engine, args)

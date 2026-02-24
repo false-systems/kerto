@@ -109,6 +109,37 @@ defmodule Kerto.Interface.Help do
         ~s(kerto observe --summary "Explored caching strategies")
       ]
     },
+    "hint" => %{
+      description: "Get compact hints for files about to be edited",
+      usage: "kerto hint --files <file1,file2,...>",
+      flags: [
+        {"--files <files>", "Comma-separated list of file paths to get hints for"}
+      ],
+      examples: ["kerto hint --files auth.ex", "kerto hint --files auth.ex,handler.ex"]
+    },
+    "bootstrap" => %{
+      description: "Bootstrap the knowledge graph from git history and file tree",
+      usage: "kerto bootstrap",
+      flags: [],
+      examples: ["kerto bootstrap"]
+    },
+    "track-edit" => %{
+      description: "Track a file edit in the session buffer",
+      usage: "kerto track-edit --file <path> [--session <id>]",
+      flags: [
+        {"--file <path>", "File path that was edited (required)"},
+        {"--session <id>", "Session identifier (default: default)"}
+      ],
+      examples: ["kerto track-edit --file auth.ex --session s1"]
+    },
+    "flush-session" => %{
+      description: "Flush session buffer and create co-edit relationships",
+      usage: "kerto flush-session [--session <id>]",
+      flags: [
+        {"--session <id>", "Session identifier (default: default)"}
+      ],
+      examples: ["kerto flush-session --session s1"]
+    },
     "init" => %{
       description: "Initialize .kerto/ directory, .mcp.json, and .gitignore",
       usage: "kerto init",

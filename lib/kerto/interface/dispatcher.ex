@@ -19,7 +19,11 @@ defmodule Kerto.Interface.Dispatcher do
     "observe" => Command.Observe,
     "init" => Command.Init,
     "start" => Command.Start,
-    "stop" => Command.Stop
+    "stop" => Command.Stop,
+    "bootstrap" => Command.Bootstrap,
+    "hint" => Command.Hint,
+    "track-edit" => Command.TrackEdit,
+    "flush-session" => Command.FlushSession
   }
 
   @spec dispatch(String.t(), atom(), map()) :: Response.t()
