@@ -18,7 +18,12 @@ defmodule Kerto.Interface.Command.InitTest do
     System.cmd("git", ["add", "."])
     System.cmd("git", ["commit", "-m", "initial"])
     start_supervised!({Kerto.Engine, name: :test_init_engine, decay_interval_ms: :timer.hours(1)})
-    on_exit(fn -> File.cd!(prev_dir) end)
+
+    on_exit(fn ->
+      File.cd!(prev_dir)
+      File.rm_rf!(@test_dir)
+    end)
+
     %{engine: :test_init_engine}
   end
 

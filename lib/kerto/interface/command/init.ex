@@ -12,7 +12,8 @@ defmodule Kerto.Interface.Command.Init do
     ".kerto/kerto.sock",
     ".kerto/kerto.pid",
     ".kerto/kerto.log",
-    ".kerto/AGENT.md"
+    ".kerto/AGENT.md",
+    ".kerto/session"
   ]
 
   @spec execute(atom(), map()) :: Response.t()
@@ -21,8 +22,14 @@ defmodule Kerto.Interface.Command.Init do
     write_mcp_json()
     update_gitignore()
     write_agent_md()
-    Bootstrap.execute(engine, %{})
-    Response.success("Initialized #{@kerto_dir}/ and #{@mcp_json}")
+
+    case Bootstrap.execute(engine, %{}) do
+      %{ok: true, data: msg} ->
+        Response.success("Initialized #{@kerto_dir}/ and #{@mcp_json} (#{msg})")
+
+      _ ->
+        Response.success("Initialized #{@kerto_dir}/ and #{@mcp_json}")
+    end
   end
 
   defp write_mcp_json do
