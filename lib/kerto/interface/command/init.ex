@@ -113,7 +113,7 @@ defmodule Kerto.Interface.Command.Init do
     case "$TOOL" in
       Write|Edit|MultiEdit|Read)
         FILE=$(echo "$INPUT" | grep -o '"file_path":"[^"]*"' | head -1 | cut -d'"' -f4)
-        [ -n "$FILE" ] && kerto hint --files "$FILE" 2>/dev/null || true
+        [ -n "$FILE" ] && kerto hint --files "$(printf '%s' "$FILE")" 2>/dev/null || true
         ;;
     esac
     """)
@@ -134,16 +134,18 @@ defmodule Kerto.Interface.Command.Init do
       Write|Edit|MultiEdit)
         FILE=$(echo "$INPUT" | grep -o '"file_path":"[^"]*"' | head -1 | cut -d'"' -f4)
         if [ -n "$FILE" ]; then
-          kerto ingest --type agent.file_edit --data "{\\"file\\":\\"$FILE\\",\\"tool\\":\\"$TOOL\\"}" || true
+          SAFE_FILE=$(printf '%s' "$FILE" | tr -d '"\\\\')
+          kerto ingest --type agent.file_edit --data "{\\"file\\":\\"$SAFE_FILE\\",\\"tool\\":\\"$TOOL\\"}" || true
           SESSION=$(cat .kerto/session 2>/dev/null)
-          [ -n "$SESSION" ] && kerto track-edit --session "$SESSION" --file "$FILE" 2>/dev/null || true
+          [ -n "$SESSION" ] && kerto track-edit --session "$SESSION" --file "$SAFE_FILE" 2>/dev/null || true
         fi
         ;;
       Bash)
         OUTPUT=$(echo "$INPUT" | grep -o '"output":"[^"]*"' | head -1 | cut -d'"' -f4)
         EXIT=$(echo "$INPUT" | grep -o '"exit_code":[0-9]*' | head -1 | cut -d':' -f2)
         if [ "$EXIT" != "0" ] && [ -n "$OUTPUT" ]; then
-          kerto ingest --type agent.tool_error --data "{\\"error\\":\\"$(echo "$OUTPUT" | head -c 200)\\",\\"tool\\":\\"Bash\\"}" || true
+          SAFE_OUTPUT=$(printf '%s' "$OUTPUT" | tr '\\n' ' ' | head -c 200 | sed 's/\\\\/\\\\\\\\/g; s/"/\\\\"/g')
+          kerto ingest --type agent.tool_error --data "{\\"error\\":\\"$SAFE_OUTPUT\\",\\"tool\\":\\"Bash\\"}" || true
         fi
         ;;
     esac
@@ -181,7 +183,7 @@ defmodule Kerto.Interface.Command.Init do
 
     # Flush session buffer for co-edit relationships
     SESSION=$(cat .kerto/session 2>/dev/null)
-    [ -n "$SESSION" ] && kerto flush-session --session "$SESSION" 2>/dev/null || true
+    [ -n "$SESSION" ] && kerto flush-session --session "$(printf '%s' "$SESSION")" 2>/dev/null || true
 
     if [ -n "$ALL_FILES" ]; then
       kerto observe --summary "$SUMMARY" --files "$ALL_FILES" || true
