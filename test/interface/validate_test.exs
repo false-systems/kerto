@@ -66,4 +66,38 @@ defmodule Kerto.Interface.ValidateTest do
       assert {:error, _} = Validate.integer_val("abc", "depth")
     end
   end
+
+  describe "confidence/1" do
+    test "accepts valid float" do
+      assert {:ok, 0.5} = Validate.confidence(0.5)
+    end
+
+    test "accepts 0.0" do
+      assert {:ok, 0.0} = Validate.confidence(0.0)
+    end
+
+    test "accepts 1.0" do
+      assert {:ok, 1.0} = Validate.confidence(1.0)
+    end
+
+    test "coerces integer 1 to 1.0" do
+      assert {:ok, 1.0} = Validate.confidence(1)
+    end
+
+    test "coerces integer 0 to 0.0" do
+      assert {:ok, 0.0} = Validate.confidence(0)
+    end
+
+    test "rejects above 1.0" do
+      assert {:error, _} = Validate.confidence(1.5)
+    end
+
+    test "rejects negative" do
+      assert {:error, _} = Validate.confidence(-0.1)
+    end
+
+    test "rejects string" do
+      assert {:error, _} = Validate.confidence("0.5")
+    end
+  end
 end

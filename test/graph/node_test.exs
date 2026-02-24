@@ -46,6 +46,12 @@ defmodule Kerto.Graph.NodeTest do
         Node.new(:banana, "auth.go", "01JABC")
       end
     end
+
+    test "rejects empty name" do
+      assert_raise FunctionClauseError, fn ->
+        Node.new(:file, "", "01JABC")
+      end
+    end
   end
 
   describe "observe/3" do

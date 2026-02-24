@@ -119,6 +119,42 @@ defmodule Kerto.Ingestion.Extractor.DecisionTest do
       assert length(for {:upsert_relationship, _} <- ops, do: :ok) == 1
     end
 
+    test "clamps confidence above 1.0" do
+      occ =
+        decision_occurrence(%{
+          subject_kind: :module,
+          subject_name: "auth",
+          target_kind: :decision,
+          target_name: "JWT",
+          confidence: 1.5,
+          evidence: "test"
+        })
+
+      ops = Decision.extract(occ)
+
+      for {_op, attrs} <- ops do
+        assert attrs[:confidence] == nil or attrs.confidence <= 1.0
+      end
+    end
+
+    test "clamps negative confidence" do
+      occ =
+        decision_occurrence(%{
+          subject_kind: :module,
+          subject_name: "auth",
+          target_kind: :decision,
+          target_name: "JWT",
+          confidence: -0.5,
+          evidence: "test"
+        })
+
+      ops = Decision.extract(occ)
+
+      for {_op, attrs} <- ops do
+        assert attrs[:confidence] == nil or attrs.confidence >= 0.0
+      end
+    end
+
     test "node confidence matches relationship confidence" do
       occ =
         decision_occurrence(%{

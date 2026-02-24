@@ -44,7 +44,9 @@ defmodule Kerto.Graph.EWMA do
   @doc """
   Clamp a value to [0.0, 1.0].
   """
-  @spec clamp(float()) :: float()
+  @spec clamp(number()) :: float()
+  def clamp(value) when is_integer(value), do: clamp(value * 1.0)
+
   def clamp(value) when is_float(value) do
     value |> max(0.0) |> min(1.0)
   end

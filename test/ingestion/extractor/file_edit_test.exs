@@ -37,5 +37,15 @@ defmodule Kerto.Ingestion.Extractor.FileEditTest do
       [{:upsert_node, attrs}] = FileEdit.extract(edit_occurrence("lib/baz.ex", "MultiEdit"))
       assert attrs.name == "lib/baz.ex"
     end
+
+    test "returns empty ops when file key is missing" do
+      occ = Occurrence.new("agent.file_edit", %{}, @source)
+      assert FileEdit.extract(occ) == []
+    end
+
+    test "returns empty ops when file is empty string" do
+      occ = Occurrence.new("agent.file_edit", %{file: ""}, @source)
+      assert FileEdit.extract(occ) == []
+    end
   end
 end

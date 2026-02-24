@@ -26,7 +26,7 @@ defmodule Kerto.Graph.Node do
 
   @spec new(atom(), String.t(), String.t()) :: t()
   def new(kind, name, ulid)
-      when is_atom(kind) and is_binary(name) and is_binary(ulid) do
+      when is_atom(kind) and is_binary(name) and byte_size(name) > 0 and is_binary(ulid) do
     true = NodeKind.valid?(kind)
     canonical = Identity.canonicalize_name(kind, name)
 

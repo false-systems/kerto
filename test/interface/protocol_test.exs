@@ -49,5 +49,19 @@ defmodule Kerto.Interface.ProtocolTest do
     test "returns error for invalid JSON" do
       assert {:error, "invalid JSON"} = Protocol.decode_request("not json")
     end
+
+    test "unknown keys stay as strings, not atoms" do
+      payload = %{
+        "command" => "context",
+        "args" => %{"kind" => "file", "name" => "auth.go", "unknown_key_xyz" => "value"}
+      }
+
+      line = Jason.encode!(payload)
+
+      {"context", args} = Protocol.decode_request(line)
+      assert args.kind == :file
+      assert args["unknown_key_xyz"] == "value"
+      refute Map.has_key?(args, :unknown_key_xyz)
+    end
   end
 end

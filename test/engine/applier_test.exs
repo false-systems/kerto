@@ -172,13 +172,23 @@ defmodule Kerto.Engine.ApplierTest do
   end
 
   describe "apply_ops/3 with unknown operation" do
-    test "raises FunctionClauseError" do
+    test "skips unknown op and returns graph unchanged" do
       graph = Graph.new()
       ops = [{:unknown_op, %{some: "data"}}]
 
-      assert_raise(FunctionClauseError, fn ->
-        Applier.apply_ops(graph, ops, "01JABC")
-      end)
+      result = Applier.apply_ops(graph, ops, "01JABC")
+      assert result == graph
+    end
+
+    test "applies known ops and skips unknown ops in mixed list" do
+      ops = [
+        {:upsert_node, %{kind: :file, name: "auth.go", confidence: 0.8}},
+        {:unknown_op, %{some: "data"}},
+        {:upsert_node, %{kind: :file, name: "handler.go", confidence: 0.7}}
+      ]
+
+      graph = Applier.apply_ops(Graph.new(), ops, "01JABC")
+      assert Graph.node_count(graph) == 2
     end
   end
 

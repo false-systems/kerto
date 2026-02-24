@@ -5,6 +5,13 @@ defmodule Kerto.Interface.Protocol do
 
   @atom_fields ~w(kind relation source_kind target_kind subject_kind format)
 
+  @known_arg_keys ~w(
+    kind name depth min_weight subject target relation
+    subject_kind target_kind confidence evidence type data
+    source format factor node source_kind target_kind
+    json summary files
+  )a
+
   @spec encode_response(Response.t()) :: String.t()
   def encode_response(%Response{ok: true, data: data}) do
     Jason.encode!(%{ok: true, data: serialize(data)})
@@ -40,7 +47,16 @@ defmodule Kerto.Interface.Protocol do
   end
 
   defp atomize_keys(map) when is_map(map) do
-    Map.new(map, fn {k, v} -> {String.to_atom(k), v} end)
+    Map.new(map, fn
+      {k, v} when is_binary(k) ->
+        case Enum.find(@known_arg_keys, &(Atom.to_string(&1) == k)) do
+          nil -> {k, v}
+          atom_key -> {atom_key, v}
+        end
+
+      {k, v} ->
+        {k, v}
+    end)
   end
 
   defp atomize_known_values(args) do
@@ -48,8 +64,18 @@ defmodule Kerto.Interface.Protocol do
       key = String.to_atom(field)
 
       case Map.get(acc, key) do
-        val when is_binary(val) -> Map.put(acc, key, String.to_atom(val))
-        _ -> acc
+        val when is_binary(val) ->
+          safe_val =
+            try do
+              String.to_existing_atom(val)
+            rescue
+              ArgumentError -> val
+            end
+
+          Map.put(acc, key, safe_val)
+
+        _ ->
+          acc
       end
     end)
   end

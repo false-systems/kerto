@@ -79,6 +79,31 @@ defmodule Kerto.Ingestion.Extractor.CiFailureTest do
       assert hd(node_ops).kind == :module
     end
 
+    test "clamps confidence above 1.0" do
+      occ = failure_occurrence(%{files: ["auth.go"], task: "test", confidence: 1.5})
+      ops = CiFailure.extract(occ)
+
+      for {_op, attrs} <- ops do
+        assert attrs[:confidence] == nil or attrs.confidence <= 1.0
+      end
+    end
+
+    test "clamps negative confidence" do
+      occ = failure_occurrence(%{files: ["auth.go"], task: "test", confidence: -0.5})
+      ops = CiFailure.extract(occ)
+
+      for {_op, attrs} <- ops do
+        assert attrs[:confidence] == nil or attrs.confidence >= 0.0
+      end
+    end
+
+    test "filters empty file names" do
+      occ = failure_occurrence(%{files: ["auth.go", "", nil], task: "test"})
+      ops = CiFailure.extract(occ)
+      file_nodes = for {:upsert_node, %{kind: :file} = attrs} <- ops, do: attrs.name
+      assert file_nodes == ["auth.go"]
+    end
+
     test "file nodes have confidence 0.7" do
       occ = failure_occurrence(%{files: ["auth.go"], task: "test"})
       ops = CiFailure.extract(occ)
