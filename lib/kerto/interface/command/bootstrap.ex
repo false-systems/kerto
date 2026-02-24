@@ -56,7 +56,7 @@ defmodule Kerto.Interface.Command.Bootstrap do
               _ -> ""
             end
 
-          %{message: message, files: file_lines |> Enum.reject(&String.contains?(&1, " "))}
+          %{message: message, files: file_lines |> Enum.reject(&String.starts_with?(&1, "%H "))}
 
         _ ->
           %{message: "", files: []}

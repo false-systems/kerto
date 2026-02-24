@@ -29,19 +29,28 @@ defmodule Kerto.Ingestion.Extractor.GitHistoryTest do
       assert_in_delta attrs.confidence, 0.3, 0.001
     end
 
-    test "creates bidirectional often_changes_with relationships" do
+    test "creates often_changes_with relationships for file pairs" do
       occ = history_occurrence([%{files: ["a.ex", "b.ex"], message: "m"}])
       ops = GitHistory.extract(occ)
 
       rel_ops = Enum.filter(ops, fn {type, _} -> type == :upsert_relationship end)
+      assert length(rel_ops) == 1
 
-      pairs =
-        Enum.map(rel_ops, fn {:upsert_relationship, attrs} ->
-          {attrs.source_name, attrs.target_name}
-        end)
+      [{:upsert_relationship, attrs}] = rel_ops
+      assert attrs.source_name == "a.ex"
+      assert attrs.target_name == "b.ex"
+    end
 
-      assert {"a.ex", "b.ex"} in pairs
-      assert {"b.ex", "a.ex"} in pairs
+    test "skips relationships when commit has more than 20 files" do
+      files = Enum.map(1..21, &"file_#{&1}.ex")
+      occ = history_occurrence([%{files: files, message: "big commit"}])
+      ops = GitHistory.extract(occ)
+
+      rel_ops = Enum.filter(ops, fn {type, _} -> type == :upsert_relationship end)
+      assert rel_ops == []
+
+      node_ops = Enum.filter(ops, fn {type, _} -> type == :upsert_node end)
+      assert length(node_ops) == 21
     end
 
     test "relationships have confidence 0.3" do

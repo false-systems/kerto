@@ -11,6 +11,7 @@ defmodule Kerto.Ingestion.Extractor.GitHistory do
   alias Kerto.Ingestion.Occurrence
 
   @confidence 0.3
+  @max_files 20
 
   @spec extract(Occurrence.t()) :: [Kerto.Ingestion.ExtractionOp.t()]
   def extract(%Occurrence{type: "bootstrap.git_history", data: data}) do
@@ -30,17 +31,21 @@ defmodule Kerto.Ingestion.Extractor.GitHistory do
         end)
 
       rel_ops =
-        for a <- files, b <- files, a != b do
-          {:upsert_relationship,
-           %{
-             source_kind: :file,
-             source_name: a,
-             relation: :often_changes_with,
-             target_kind: :file,
-             target_name: b,
-             confidence: @confidence,
-             evidence: "git history: #{message}"
-           }}
+        if length(files) >= 2 and length(files) <= @max_files do
+          for a <- files, b <- files, a < b do
+            {:upsert_relationship,
+             %{
+               source_kind: :file,
+               source_name: a,
+               relation: :often_changes_with,
+               target_kind: :file,
+               target_name: b,
+               confidence: @confidence,
+               evidence: "git history: #{message}"
+             }}
+          end
+        else
+          []
         end
 
       node_ops ++ rel_ops

@@ -8,11 +8,11 @@ defmodule Kerto.Interface.Command.Hint do
   def execute(engine, args) do
     files = normalize_files(Map.get(args, :files, []))
 
+    graph = Kerto.Engine.get_graph(engine)
+
     contexts =
       files
       |> Enum.map(fn file ->
-        graph = Kerto.Engine.get_graph(engine)
-
         case Query.query_context(graph, :file, file, "", depth: 1) do
           {:ok, ctx} -> ctx
           {:error, _} -> nil
