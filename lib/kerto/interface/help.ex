@@ -97,6 +97,18 @@ defmodule Kerto.Interface.Help do
         "kerto delete --source auth.go --relation breaks --target test"
       ]
     },
+    "observe" => %{
+      description: "Record a session summary of what was discovered or changed",
+      usage: "kerto observe --summary <text> [--files <file1,file2,...>]",
+      flags: [
+        {"--summary <text>", "1-3 sentence summary of the session (required)"},
+        {"--files <files>", "Comma-separated list of central files"}
+      ],
+      examples: [
+        ~s(kerto observe --summary "Fixed OOM in auth" --files "auth.go,cache.go"),
+        ~s(kerto observe --summary "Explored caching strategies")
+      ]
+    },
     "init" => %{
       description: "Initialize .kerto/ directory, .mcp.json, and .gitignore",
       usage: "kerto init",

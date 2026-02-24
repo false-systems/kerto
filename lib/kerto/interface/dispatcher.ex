@@ -16,6 +16,7 @@ defmodule Kerto.Interface.Dispatcher do
     "decay" => Command.Decay,
     "weaken" => Command.Weaken,
     "delete" => Command.Delete,
+    "observe" => Command.Observe,
     "init" => Command.Init,
     "start" => Command.Start,
     "stop" => Command.Stop

@@ -15,5 +15,7 @@ defmodule Kerto.Ingestion.Extraction do
   def extract(%Occurrence{type: "ci.run.passed"} = occ), do: Extractor.CiSuccess.extract(occ)
   def extract(%Occurrence{type: "context.learning"} = occ), do: Extractor.Learning.extract(occ)
   def extract(%Occurrence{type: "context.decision"} = occ), do: Extractor.Decision.extract(occ)
+  def extract(%Occurrence{type: "agent.file_edit"} = occ), do: Extractor.FileEdit.extract(occ)
+  def extract(%Occurrence{type: "agent.session_end"} = occ), do: Extractor.SessionEnd.extract(occ)
   def extract(%Occurrence{}), do: []
 end

@@ -70,6 +70,25 @@ defmodule Kerto.Ingestion.ExtractionTest do
       assert length(rels) == 1
     end
 
+    test "dispatches agent.file_edit to FileEdit extractor" do
+      occ = Occurrence.new("agent.file_edit", %{file: "lib/foo.ex", tool: "Edit"}, @source)
+      ops = Extraction.extract(occ)
+      assert [{:upsert_node, %{kind: :file, name: "lib/foo.ex"}}] = ops
+    end
+
+    test "dispatches agent.session_end to SessionEnd extractor" do
+      occ =
+        Occurrence.new(
+          "agent.session_end",
+          %{summary: "Fixed auth", files: ["auth.go"]},
+          @source
+        )
+
+      ops = Extraction.extract(occ)
+      concepts = for {:upsert_node, %{kind: :concept}} <- ops, do: :ok
+      assert length(concepts) == 1
+    end
+
     test "returns empty list for unknown type" do
       occ = Occurrence.new("unknown.type", %{}, @source)
       assert Extraction.extract(occ) == []

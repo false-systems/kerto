@@ -3,7 +3,7 @@ defmodule Kerto.Interface.MCP do
 
   alias Kerto.Interface.{ContextWriter, Dispatcher, Protocol}
 
-  @mutating_commands ~w(learn decide ingest decay weaken delete)
+  @mutating_commands ~w(learn decide ingest observe decay weaken delete)
 
   @tools [
     %{
@@ -72,6 +72,23 @@ defmodule Kerto.Interface.MCP do
       }
     },
     %{
+      name: "kerto_observe",
+      description: "Record a session summary of what was discovered or changed",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          summary: %{type: "string", description: "1-3 sentence summary of the session"},
+          files: %{
+            type: "array",
+            items: %{type: "string"},
+            description: "Central files worked on during the session"
+          },
+          session_id: %{type: "string", description: "Optional session identifier"}
+        },
+        required: ["summary"]
+      }
+    },
+    %{
       name: "kerto_weaken",
       description: "Weaken a specific relationship",
       inputSchema: %{
@@ -95,6 +112,7 @@ defmodule Kerto.Interface.MCP do
     "kerto_decide" => "decide",
     "kerto_status" => "status",
     "kerto_graph" => "graph",
+    "kerto_observe" => "observe",
     "kerto_weaken" => "weaken"
   }
 

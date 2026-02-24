@@ -63,6 +63,8 @@ sykli          # runs format → compile → test (also pre-commit hook)
 | Mesh.Authority | `Kerto.Mesh.Authority` | Team CA: init, sign CSR, verify certs |
 | Mesh.Sync | `Kerto.Mesh.Sync` | Occurrence-based sync protocol, ULID sync points |
 
+> Agent learning conventions: see `.kerto/AGENT.md`
+
 ## Anti-Patterns (Instant Rejection)
 
 - `IO.puts` in Level 0/1

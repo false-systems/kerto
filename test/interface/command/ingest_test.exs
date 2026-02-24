@@ -41,4 +41,18 @@ defmodule Kerto.Interface.Command.IngestTest do
     resp = Ingest.execute(engine, args)
     assert resp.ok
   end
+
+  test "parses data from JSON string", %{engine: engine} do
+    args = %{type: "vcs.commit", data: ~s({"files":["c.go"],"message":"fix"})}
+    resp = Ingest.execute(engine, args)
+    assert resp.ok
+    assert {:ok, _} = Kerto.Engine.get_node(engine, :file, "c.go")
+  end
+
+  test "returns error for invalid JSON data string", %{engine: engine} do
+    args = %{type: "vcs.commit", data: "not json"}
+    resp = Ingest.execute(engine, args)
+    refute resp.ok
+    assert resp.error =~ "JSON"
+  end
 end

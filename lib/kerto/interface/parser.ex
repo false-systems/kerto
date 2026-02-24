@@ -25,7 +25,7 @@ defmodule Kerto.Interface.Parser do
       target_kind: :string,
       confidence: :float
     ],
-    "ingest" => [type: :string],
+    "ingest" => [type: :string, data: :string],
     "graph" => [format: :string],
     "decay" => [factor: :float],
     "weaken" => [
@@ -45,6 +45,7 @@ defmodule Kerto.Interface.Parser do
       source_kind: :string,
       target_kind: :string
     ],
+    "observe" => [summary: :string, files: :string],
     "init" => [],
     "start" => [],
     "stop" => []
