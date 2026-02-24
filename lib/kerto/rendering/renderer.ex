@@ -12,7 +12,7 @@ defmodule Kerto.Rendering.Renderer do
 
   @caution_relations [:breaks, :caused_by, :triggers]
   @knowledge_relations [:learned, :decided, :tried_failed]
-  @structure_relations [:depends_on, :part_of, :often_changes_with]
+  @structure_relations [:depends_on, :part_of, :often_changes_with, :edited_with]
   @max_evidence 3
 
   @spec render(Context.t()) :: String.t()

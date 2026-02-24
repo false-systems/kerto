@@ -11,7 +11,8 @@ defmodule Kerto.Interface.Command.Init do
     ".kerto/kerto.sock",
     ".kerto/kerto.pid",
     ".kerto/kerto.log",
-    ".kerto/AGENT.md"
+    ".kerto/AGENT.md",
+    ".kerto/session"
   ]
 
   @claude_dir ".claude"
@@ -94,9 +95,30 @@ defmodule Kerto.Interface.Command.Init do
 
   defp write_claude_hooks do
     File.mkdir_p!(@claude_hooks_dir)
+    write_pre_tool_use_hook()
     write_post_tool_use_hook()
     write_stop_hook()
     update_claude_settings()
+  end
+
+  defp write_pre_tool_use_hook do
+    path = Path.join(@claude_hooks_dir, "pre_tool_use.sh")
+
+    File.write!(path, """
+    #!/bin/sh
+    # Kerto auto-learning: inject hints before file operations
+    INPUT=$(cat)
+    TOOL=$(echo "$INPUT" | grep -o '"tool_name":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+    case "$TOOL" in
+      Write|Edit|MultiEdit|Read)
+        FILE=$(echo "$INPUT" | grep -o '"file_path":"[^"]*"' | head -1 | cut -d'"' -f4)
+        [ -n "$FILE" ] && kerto hint --files "$FILE" 2>/dev/null || true
+        ;;
+    esac
+    """)
+
+    File.chmod!(path, 0o755)
   end
 
   defp write_post_tool_use_hook do
@@ -104,7 +126,7 @@ defmodule Kerto.Interface.Command.Init do
 
     File.write!(path, """
     #!/bin/sh
-    # Kerto auto-learning: track file edits from agent tools
+    # Kerto auto-learning: track file edits and tool errors from agent tools
     INPUT=$(cat)
     TOOL=$(echo "$INPUT" | grep -o '"tool_name":"[^"]*"' | head -1 | cut -d'"' -f4)
 
@@ -113,6 +135,15 @@ defmodule Kerto.Interface.Command.Init do
         FILE=$(echo "$INPUT" | grep -o '"file_path":"[^"]*"' | head -1 | cut -d'"' -f4)
         if [ -n "$FILE" ]; then
           kerto ingest --type agent.file_edit --data "{\\"file\\":\\"$FILE\\",\\"tool\\":\\"$TOOL\\"}" || true
+          SESSION=$(cat .kerto/session 2>/dev/null)
+          [ -n "$SESSION" ] && kerto track-edit --session "$SESSION" --file "$FILE" 2>/dev/null || true
+        fi
+        ;;
+      Bash)
+        OUTPUT=$(echo "$INPUT" | grep -o '"output":"[^"]*"' | head -1 | cut -d'"' -f4)
+        EXIT=$(echo "$INPUT" | grep -o '"exit_code":[0-9]*' | head -1 | cut -d':' -f2)
+        if [ "$EXIT" != "0" ] && [ -n "$OUTPUT" ]; then
+          kerto ingest --type agent.tool_error --data "{\\"error\\":\\"$(echo "$OUTPUT" | head -c 200)\\",\\"tool\\":\\"Bash\\"}" || true
         fi
         ;;
     esac
@@ -147,6 +178,10 @@ defmodule Kerto.Interface.Command.Init do
     if [ -n "$STAT" ]; then
       SUMMARY="$SUMMARY ($STAT)"
     fi
+
+    # Flush session buffer for co-edit relationships
+    SESSION=$(cat .kerto/session 2>/dev/null)
+    [ -n "$SESSION" ] && kerto flush-session --session "$SESSION" 2>/dev/null || true
 
     if [ -n "$ALL_FILES" ]; then
       kerto observe --summary "$SUMMARY" --files "$ALL_FILES" || true
@@ -197,7 +232,24 @@ defmodule Kerto.Interface.Command.Init do
         do: stop,
         else: stop ++ [kerto_stop]
 
-    hooks = hooks |> Map.put("PostToolUse", post_tool_use) |> Map.put("Stop", stop)
+    pre_tool_use = Map.get(hooks, "PreToolUse", [])
+
+    kerto_pre = %{
+      "type" => "command",
+      "command" => "sh .claude/hooks/pre_tool_use.sh"
+    }
+
+    pre_tool_use =
+      if Enum.any?(pre_tool_use, &(&1["command"] == kerto_pre["command"])),
+        do: pre_tool_use,
+        else: pre_tool_use ++ [kerto_pre]
+
+    hooks =
+      hooks
+      |> Map.put("PreToolUse", pre_tool_use)
+      |> Map.put("PostToolUse", post_tool_use)
+      |> Map.put("Stop", stop)
+
     merged = Map.put(existing, "hooks", hooks)
     File.write!(@claude_settings, Jason.encode!(merged, pretty: true) <> "\n")
   end

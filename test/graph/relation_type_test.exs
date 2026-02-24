@@ -14,7 +14,8 @@ defmodule Kerto.Graph.RelationTypeTest do
             :learned,
             :decided,
             :tried_failed,
-            :often_changes_with
+            :often_changes_with,
+            :edited_with
           ] do
         assert RelationType.valid?(type), "expected #{type} to be valid"
       end
@@ -30,8 +31,8 @@ defmodule Kerto.Graph.RelationTypeTest do
   end
 
   describe "all/0" do
-    test "returns all ten types" do
-      assert length(RelationType.all()) == 10
+    test "returns all eleven types" do
+      assert length(RelationType.all()) == 11
     end
 
     test "returns atoms" do

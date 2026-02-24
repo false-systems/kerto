@@ -10,6 +10,7 @@ defmodule Kerto.Interface.Protocol do
     subject_kind target_kind confidence evidence type data
     source format factor node
     json summary files
+    agent session file
   )a
 
   @spec encode_response(Response.t()) :: String.t()

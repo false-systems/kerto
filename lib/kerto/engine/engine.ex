@@ -13,7 +13,7 @@ defmodule Kerto.Engine do
 
   use Supervisor
 
-  alias Kerto.Engine.{Config, Decay, OccurrenceLog, Store}
+  alias Kerto.Engine.{Config, Decay, OccurrenceLog, SessionBuffer, SessionRegistry, Store}
 
   # --- Supervisor ---
 
@@ -33,12 +33,16 @@ defmodule Kerto.Engine do
     log_name = child_name(prefix, :log)
     store_name = child_name(prefix, :store)
     decay_name = child_name(prefix, :decay)
+    buffer_name = child_name(prefix, :buffer)
+    registry_name = child_name(prefix, :registry)
 
     children = [
       {OccurrenceLog, name: log_name, max: max_occ},
       {Store, name: store_name, persistence_path: persistence_path},
       {Decay,
-       name: decay_name, store: store_name, interval_ms: decay_interval, factor: decay_factor}
+       name: decay_name, store: store_name, interval_ms: decay_interval, factor: decay_factor},
+      {SessionBuffer, name: buffer_name},
+      {SessionRegistry, name: registry_name}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
@@ -138,9 +142,60 @@ defmodule Kerto.Engine do
     }
   end
 
+  # --- Session Buffer ---
+
+  @spec track_edit(atom(), String.t(), String.t()) :: :ok
+  def track_edit(engine \\ __MODULE__, session_id, file) do
+    SessionBuffer.track_edit(child_name(engine, :buffer), session_id, file)
+  end
+
+  @spec flush_session(atom(), String.t()) :: {:ok, map()} | {:error, :not_found}
+  def flush_session(engine \\ __MODULE__, session_id) do
+    SessionBuffer.flush(child_name(engine, :buffer), session_id)
+  end
+
+  @spec list_sessions(atom()) :: [String.t()]
+  def list_sessions(engine \\ __MODULE__) do
+    SessionBuffer.list_sessions(child_name(engine, :buffer))
+  end
+
+  # --- Session Registry ---
+
+  @spec register_session(atom(), String.t()) :: {:ok, String.t()}
+  def register_session(engine \\ __MODULE__, agent_name) do
+    SessionRegistry.register(child_name(engine, :registry), agent_name)
+  end
+
+  @spec deregister_session(atom(), String.t()) :: :ok
+  def deregister_session(engine \\ __MODULE__, session_id) do
+    SessionRegistry.deregister(child_name(engine, :registry), session_id)
+  end
+
+  @spec track_session_file(atom(), String.t(), String.t()) :: :ok
+  def track_session_file(engine \\ __MODULE__, session_id, file) do
+    SessionRegistry.track_file(child_name(engine, :registry), session_id, file)
+  end
+
+  @spec active_sessions(atom()) :: [map()]
+  def active_sessions(engine \\ __MODULE__) do
+    SessionRegistry.active_sessions(child_name(engine, :registry))
+  end
+
+  @spec active_files(atom()) :: [String.t()]
+  def active_files(engine \\ __MODULE__) do
+    SessionRegistry.active_files(child_name(engine, :registry))
+  end
+
+  @spec session_files(atom(), String.t()) :: {:ok, [String.t()]} | {:error, :not_found}
+  def session_files(engine \\ __MODULE__, session_id) do
+    SessionRegistry.session_files(child_name(engine, :registry), session_id)
+  end
+
   # --- Private ---
 
   defp child_name(prefix, :log), do: :"#{prefix}.log"
   defp child_name(prefix, :store), do: :"#{prefix}.store"
   defp child_name(prefix, :decay), do: :"#{prefix}.decay"
+  defp child_name(prefix, :buffer), do: :"#{prefix}.buffer"
+  defp child_name(prefix, :registry), do: :"#{prefix}.registry"
 end
