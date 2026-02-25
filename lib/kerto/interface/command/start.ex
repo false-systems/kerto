@@ -68,22 +68,9 @@ defmodule Kerto.Interface.Command.Start do
 
     if wait_for_socket(@socket_path, @max_wait_ms) do
       spawn(fn -> DaemonClient.send_command(@socket_path, "bootstrap", %{}) end)
-      register_session()
       Response.success("Daemon started (pid #{pid_str})")
     else
       Response.error("daemon started but socket not ready after #{@max_wait_ms}ms")
-    end
-  end
-
-  defp register_session do
-    agent = System.get_env("KERTO_AGENT", "agent-#{:rand.uniform(9999)}")
-
-    case DaemonClient.send_command(@socket_path, "register", %{"agent" => agent}) do
-      {:ok, %{"ok" => true, "data" => session_id}} ->
-        File.write!(".kerto/session", session_id)
-
-      _ ->
-        :ok
     end
   end
 

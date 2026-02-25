@@ -12,8 +12,7 @@ defmodule Kerto.Interface.Command.Init do
     ".kerto/kerto.sock",
     ".kerto/kerto.pid",
     ".kerto/kerto.log",
-    ".kerto/AGENT.md",
-    ".kerto/session"
+    ".kerto/AGENT.md"
   ]
 
   @spec execute(atom(), map()) :: Response.t()
