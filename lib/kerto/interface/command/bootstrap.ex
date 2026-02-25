@@ -1,11 +1,5 @@
 defmodule Kerto.Interface.Command.Bootstrap do
-  @moduledoc """
-  Cold-start bootstrap: seeds the knowledge graph from git history and file tree.
-
-  Shells out to `git log` and `git ls-files`, then ingests the results
-  as `bootstrap.git_history` and `bootstrap.file_tree` occurrences.
-  Idempotent — skips if the graph already has more than 10 nodes.
-  """
+  @moduledoc "Seeds the knowledge graph from git history and file tree."
 
   alias Kerto.Interface.{Response, ULID}
   alias Kerto.Ingestion.{Occurrence, Source}

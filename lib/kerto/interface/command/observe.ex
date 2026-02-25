@@ -1,10 +1,5 @@
 defmodule Kerto.Interface.Command.Observe do
-  @moduledoc """
-  Records a session summary as an `agent.session_end` occurrence.
-
-  Creates a concept node from the summary and links mentioned files to it,
-  capturing what was discovered or changed during a session.
-  """
+  @moduledoc "Records a session summary as an `agent.session_end` occurrence."
 
   alias Kerto.Ingestion.{Occurrence, Source}
   alias Kerto.Interface.{Response, ULID}
