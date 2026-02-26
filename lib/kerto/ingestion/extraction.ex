@@ -24,8 +24,5 @@ defmodule Kerto.Ingestion.Extraction do
   def extract(%Occurrence{type: "bootstrap.file_tree"} = occ), do: Extractor.FileTree.extract(occ)
   def extract(%Occurrence{type: "agent.tool_error"} = occ), do: Extractor.ToolError.extract(occ)
 
-  def extract(%Occurrence{type: "agent.session_edits"} = occ),
-    do: Extractor.SessionEdits.extract(occ)
-
   def extract(%Occurrence{}), do: []
 end

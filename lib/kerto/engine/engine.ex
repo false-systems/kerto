@@ -13,7 +13,7 @@ defmodule Kerto.Engine do
 
   use Supervisor
 
-  alias Kerto.Engine.{Config, Decay, OccurrenceLog, SessionBuffer, SessionRegistry, Store}
+  alias Kerto.Engine.{Config, Decay, OccurrenceLog, SessionRegistry, Store}
 
   # --- Supervisor ---
 
@@ -33,7 +33,6 @@ defmodule Kerto.Engine do
     log_name = child_name(prefix, :log)
     store_name = child_name(prefix, :store)
     decay_name = child_name(prefix, :decay)
-    buffer_name = child_name(prefix, :buffer)
     registry_name = child_name(prefix, :registry)
 
     children = [
@@ -41,7 +40,6 @@ defmodule Kerto.Engine do
       {Store, name: store_name, persistence_path: persistence_path},
       {Decay,
        name: decay_name, store: store_name, interval_ms: decay_interval, factor: decay_factor},
-      {SessionBuffer, name: buffer_name},
       {SessionRegistry, name: registry_name}
     ]
 
@@ -142,23 +140,6 @@ defmodule Kerto.Engine do
     }
   end
 
-  # --- Session Buffer ---
-
-  @spec track_edit(atom(), String.t(), String.t()) :: :ok
-  def track_edit(engine \\ __MODULE__, session_id, file) do
-    SessionBuffer.track_edit(child_name(engine, :buffer), session_id, file)
-  end
-
-  @spec flush_session(atom(), String.t()) :: {:ok, map()} | {:error, :not_found}
-  def flush_session(engine \\ __MODULE__, session_id) do
-    SessionBuffer.flush(child_name(engine, :buffer), session_id)
-  end
-
-  @spec list_sessions(atom()) :: [String.t()]
-  def list_sessions(engine \\ __MODULE__) do
-    SessionBuffer.list_sessions(child_name(engine, :buffer))
-  end
-
   # --- Session Registry ---
 
   @spec register_session(atom(), String.t()) :: {:ok, String.t()}
@@ -196,6 +177,5 @@ defmodule Kerto.Engine do
   defp child_name(prefix, :log), do: :"#{prefix}.log"
   defp child_name(prefix, :store), do: :"#{prefix}.store"
   defp child_name(prefix, :decay), do: :"#{prefix}.decay"
-  defp child_name(prefix, :buffer), do: :"#{prefix}.buffer"
   defp child_name(prefix, :registry), do: :"#{prefix}.registry"
 end
