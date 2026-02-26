@@ -14,11 +14,11 @@ defmodule Kerto.Engine.OccurrenceLogTest do
     %{log: log}
   end
 
-  describe "append/2 and all/1" do
+  describe "append/2 and since/2" do
     test "stores an occurrence", %{log: log} do
       occ = make_occurrence("01JAAA")
       assert :ok = OccurrenceLog.append(log, occ)
-      assert [^occ] = OccurrenceLog.all(log)
+      assert [^occ] = OccurrenceLog.since(log, nil)
     end
 
     test "stores multiple occurrences in order", %{log: log} do
@@ -30,7 +30,7 @@ defmodule Kerto.Engine.OccurrenceLogTest do
       OccurrenceLog.append(log, occ2)
       OccurrenceLog.append(log, occ3)
 
-      result = OccurrenceLog.all(log)
+      result = OccurrenceLog.since(log, nil)
       ulids = Enum.map(result, & &1.source.ulid)
       assert ulids == ["01JAAA", "01JBBB", "01JCCC"]
     end
@@ -43,7 +43,7 @@ defmodule Kerto.Engine.OccurrenceLogTest do
         OccurrenceLog.append(log, make_occurrence(ulid))
       end
 
-      result = OccurrenceLog.all(log)
+      result = OccurrenceLog.since(log, nil)
       assert length(result) == 5
       # oldest (000001) should be evicted
       ulids = Enum.map(result, & &1.source.ulid)
