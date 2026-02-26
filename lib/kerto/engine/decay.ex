@@ -20,16 +20,6 @@ defmodule Kerto.Engine.Decay do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
-  @spec tick(GenServer.server()) :: :ok
-  def tick(server \\ __MODULE__) do
-    GenServer.call(server, :tick)
-  end
-
-  @spec status(GenServer.server()) :: map()
-  def status(server \\ __MODULE__) do
-    GenServer.call(server, :status)
-  end
-
   # --- Server Callbacks ---
 
   @impl true
@@ -40,24 +30,14 @@ defmodule Kerto.Engine.Decay do
 
     schedule_tick(interval)
 
-    {:ok, %{interval: interval, factor: factor, store: store, ticks: 0}}
-  end
-
-  @impl true
-  def handle_call(:tick, _from, state) do
-    Store.decay(state.store, state.factor)
-    {:reply, :ok, %{state | ticks: state.ticks + 1}}
-  end
-
-  def handle_call(:status, _from, state) do
-    {:reply, %{ticks: state.ticks, factor: state.factor, interval_ms: state.interval}, state}
+    {:ok, %{interval: interval, factor: factor, store: store}}
   end
 
   @impl true
   def handle_info(:tick, state) do
     Store.decay(state.store, state.factor)
     schedule_tick(state.interval)
-    {:noreply, %{state | ticks: state.ticks + 1}}
+    {:noreply, state}
   end
 
   defp schedule_tick(interval) do

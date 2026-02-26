@@ -24,11 +24,6 @@ defmodule Kerto.Engine.OccurrenceLog do
     GenServer.call(server, {:append, occurrence})
   end
 
-  @spec all(GenServer.server()) :: [Occurrence.t()]
-  def all(server \\ __MODULE__) do
-    GenServer.call(server, :all)
-  end
-
   @spec since(GenServer.server(), String.t() | nil) :: [Occurrence.t()]
   def since(server \\ __MODULE__, sync_point) do
     GenServer.call(server, {:since, sync_point})
@@ -58,15 +53,6 @@ defmodule Kerto.Engine.OccurrenceLog do
     end
 
     {:reply, :ok, state}
-  end
-
-  def handle_call(:all, _from, state) do
-    result =
-      :ets.tab2list(state.table)
-      |> Enum.sort_by(&elem(&1, 0))
-      |> Enum.map(&elem(&1, 1))
-
-    {:reply, result, state}
   end
 
   def handle_call({:since, nil}, _from, state) do

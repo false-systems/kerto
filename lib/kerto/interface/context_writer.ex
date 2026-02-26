@@ -41,33 +41,6 @@ defmodule Kerto.Interface.ContextWriter do
     end
   end
 
-  @spec render_session_context(Kerto.Graph.Graph.t(), [String.t()]) :: String.t()
-  def render_session_context(graph, active_files) when is_list(active_files) do
-    case active_files do
-      [] ->
-        render_full_context(graph)
-
-      files ->
-        sections =
-          files
-          |> Enum.take(20)
-          |> Enum.map(fn file ->
-            case Query.query_context(graph, :file, file, "", depth: 1) do
-              {:ok, ctx} -> Renderer.render(ctx)
-              {:error, _} -> nil
-            end
-          end)
-          |> Enum.reject(&is_nil/1)
-
-        header = "# Kerto Session Context\n\n_Auto-generated for active session files._\n"
-
-        case sections do
-          [] -> render_full_context(graph)
-          _ -> header <> "\n" <> Enum.join(sections, "\n\n---\n\n") <> "\n"
-        end
-    end
-  end
-
   @impl true
   def init(opts) do
     Process.flag(:trap_exit, true)
