@@ -5,7 +5,7 @@ defmodule Kerto.Interface.Daemon do
 
   alias Kerto.Interface.{ContextWriter, Dispatcher, Protocol}
 
-  @mutating_commands ~w(learn decide ingest decay weaken delete bootstrap flush-session)
+  @mutating_commands ~w(learn decide ingest decay weaken delete bootstrap)
 
   def start_link(opts) do
     name = Keyword.get(opts, :name, __MODULE__)

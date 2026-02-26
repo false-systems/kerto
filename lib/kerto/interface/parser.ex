@@ -50,9 +50,7 @@ defmodule Kerto.Interface.Parser do
     "start" => [],
     "stop" => [],
     "bootstrap" => [],
-    "hint" => [files: :string],
-    "track-edit" => [file: :string, session: :string],
-    "flush-session" => [session: :string]
+    "hint" => [files: :string]
   }
 
   @atom_fields ~w(kind format relation source_kind target_kind subject_kind)a

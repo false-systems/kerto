@@ -123,23 +123,6 @@ defmodule Kerto.Interface.Help do
       flags: [],
       examples: ["kerto bootstrap"]
     },
-    "track-edit" => %{
-      description: "Track a file edit in the session buffer",
-      usage: "kerto track-edit --file <path> [--session <id>]",
-      flags: [
-        {"--file <path>", "File path that was edited (required)"},
-        {"--session <id>", "Session identifier (default: default)"}
-      ],
-      examples: ["kerto track-edit --file auth.ex --session s1"]
-    },
-    "flush-session" => %{
-      description: "Flush session buffer and create co-edit relationships",
-      usage: "kerto flush-session [--session <id>]",
-      flags: [
-        {"--session <id>", "Session identifier (default: default)"}
-      ],
-      examples: ["kerto flush-session --session s1"]
-    },
     "init" => %{
       description: "Initialize .kerto/ directory, .mcp.json, and .gitignore",
       usage: "kerto init",
