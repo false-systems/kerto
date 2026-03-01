@@ -63,6 +63,24 @@ defmodule Kerto.Rendering.HintRendererTest do
       assert result =~ "3x"
     end
 
+    test "coupling relation produces hint line" do
+      other = make_node(:file, "store.ex")
+
+      rel =
+        make_rel(:file, "engine.ex", :often_changes_with, :file, "store.ex",
+          weight: 0.6,
+          observations: 5
+        )
+
+      ctx = make_context(:file, "engine.ex", [rel], [other])
+
+      result = HintRenderer.render([ctx])
+      assert result =~ "[kerto] engine.ex"
+      assert result =~ "often_changes_with"
+      assert result =~ "store.ex"
+      assert result =~ "5x"
+    end
+
     test "structure relations are skipped" do
       target = make_node(:module, "lib")
       rel = make_rel(:file, "auth.ex", :depends_on, :module, "lib")
@@ -100,6 +118,27 @@ defmodule Kerto.Rendering.HintRendererTest do
       count = result |> String.split("breaks") |> length()
       # "breaks" appears once in the output, meaning split produces 2 parts
       assert count == 2
+    end
+
+    test "caution relations sort before coupling relations" do
+      target1 = make_node(:file, "deploy.sh")
+      target2 = make_node(:file, "store.ex")
+
+      caution_rel =
+        make_rel(:file, "auth.ex", :breaks, :file, "deploy.sh", weight: 0.5, observations: 1)
+
+      coupling_rel =
+        make_rel(:file, "auth.ex", :often_changes_with, :file, "store.ex",
+          weight: 0.9,
+          observations: 10
+        )
+
+      ctx = make_context(:file, "auth.ex", [coupling_rel, caution_rel], [target1, target2])
+
+      result = HintRenderer.render([ctx])
+      breaks_pos = :binary.match(result, "breaks") |> elem(0)
+      coupling_pos = :binary.match(result, "often_changes_with") |> elem(0)
+      assert breaks_pos < coupling_pos
     end
 
     test "multiple relationships for same node joined with pipe" do

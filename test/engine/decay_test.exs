@@ -32,5 +32,4 @@ defmodule Kerto.Engine.DecayTest do
       assert after_decay.relevance < before.relevance
     end
   end
-
 end

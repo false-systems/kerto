@@ -11,6 +11,7 @@ defmodule Kerto.Rendering.HintRenderer do
 
   @caution_relations [:breaks, :caused_by, :triggers]
   @knowledge_relations [:learned, :decided, :tried_failed]
+  @coupling_relations [:often_changes_with]
   @max_lines 5
   @max_chars 500
 
@@ -39,7 +40,8 @@ defmodule Kerto.Rendering.HintRenderer do
   defp extract_hints(%Context{} = ctx) do
     caution = extract_by_relations(ctx, @caution_relations, :caution)
     knowledge = extract_by_relations(ctx, @knowledge_relations, :knowledge)
-    caution ++ knowledge
+    coupling = extract_by_relations(ctx, @coupling_relations, :coupling)
+    caution ++ knowledge ++ coupling
   end
 
   defp extract_by_relations(ctx, relations, _group) do
@@ -61,7 +63,13 @@ defmodule Kerto.Rendering.HintRenderer do
 
   defp sort_hints(hints) do
     Enum.sort_by(hints, fn {_name, relation, _other, weight, _obs} ->
-      priority = if relation in @caution_relations, do: 0, else: 1
+      priority =
+        cond do
+          relation in @caution_relations -> 0
+          relation in @knowledge_relations -> 1
+          true -> 2
+        end
+
       {priority, -weight}
     end)
   end
