@@ -75,6 +75,16 @@ defmodule Kerto.Engine.Store do
     )
   end
 
+  @spec clear(GenServer.server()) :: :ok
+  def clear(server \\ __MODULE__) do
+    GenServer.call(server, :clear)
+  end
+
+  @spec persistence_path(GenServer.server()) :: String.t() | nil
+  def persistence_path(server \\ __MODULE__) do
+    GenServer.call(server, :persistence_path)
+  end
+
   @spec dump(GenServer.server()) :: Graph.t()
   def dump(server \\ __MODULE__), do: get_graph(server)
 
@@ -134,6 +144,16 @@ defmodule Kerto.Engine.Store do
 
   def handle_call(:relationship_count, _from, state) do
     {:reply, Graph.relationship_count(state.graph), state}
+  end
+
+  def handle_call(:clear, _from, state) do
+    state = %{state | graph: Graph.new()}
+    maybe_persist(state)
+    {:reply, :ok, state}
+  end
+
+  def handle_call(:persistence_path, _from, state) do
+    {:reply, state.persistence_path, state}
   end
 
   def handle_call({:delete_node, kind, name}, _from, state) do

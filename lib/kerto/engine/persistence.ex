@@ -28,8 +28,29 @@ defmodule Kerto.Engine.Persistence do
     end
   end
 
+  @spec save_fingerprint(String.t(), String.t()) :: :ok | {:error, term()}
+  def save_fingerprint(base_dir, fingerprint) when is_binary(fingerprint) do
+    dir = base_dir
+
+    with :ok <- File.mkdir_p(dir),
+         :ok <- File.write(fingerprint_path(base_dir), fingerprint) do
+      :ok
+    end
+  end
+
+  @spec load_fingerprint(String.t()) :: String.t() | nil
+  def load_fingerprint(base_dir) do
+    case File.read(fingerprint_path(base_dir)) do
+      {:ok, data} -> String.trim(data)
+      {:error, _} -> nil
+    end
+  end
+
   @spec path(String.t()) :: String.t()
   def path(base_dir), do: Path.join(base_dir, "graph.etf")
+
+  @spec fingerprint_path(String.t()) :: String.t()
+  def fingerprint_path(base_dir), do: Path.join(base_dir, "repo_fingerprint")
 
   defp safe_decode(binary) do
     case safe_binary_to_term(binary) do
