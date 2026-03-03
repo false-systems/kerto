@@ -25,7 +25,7 @@ defmodule Kerto.Mesh.Peer do
     GenServer.start_link(__MODULE__, opts, name: name)
   end
 
-  @spec connect(GenServer.server()) :: :ok
+  @spec connect(GenServer.server()) :: :ok | {:error, :not_idle}
   def connect(server), do: GenServer.call(server, :connect)
 
   @spec status(GenServer.server()) :: %{peer: String.t(), status: atom()}
@@ -50,7 +50,6 @@ defmodule Kerto.Mesh.Peer do
       engine: engine,
       status: :idle,
       sync_points: %{},
-      last_peer_ulid: nil,
       poll_interval_ms: poll_interval_ms,
       peer_live: false,
       we_sent_live: false,
@@ -86,9 +85,18 @@ defmodule Kerto.Mesh.Peer do
   end
 
   def handle_info({:sync_occurrence, occ}, state) do
-    Engine.ingest(state.engine, occ)
-    ulid = occ.source.ulid
-    {:noreply, %{state | last_peer_ulid: ulid}}
+    if Sync.should_sync?(occ) do
+      Engine.ingest(state.engine, occ)
+      ulid = occ.source.ulid
+      sync_points = Sync.update_sync_point(state.sync_points, state.peer_node, ulid)
+      {:noreply, %{state | sync_points: sync_points}}
+    else
+      {:noreply, state}
+    end
+  end
+
+  def handle_info(:sync_live, %{status: :live} = state) do
+    {:noreply, state}
   end
 
   def handle_info(:sync_live, %{we_sent_live: true} = state) do
@@ -118,8 +126,12 @@ defmodule Kerto.Mesh.Peer do
 
   def handle_info(:poll, state), do: {:noreply, state}
 
-  def handle_info({:nodedown, _node}, state) do
-    {:noreply, %{state | status: :idle, peer_live: false, we_sent_live: false}}
+  def handle_info({:nodedown, node}, state) when is_atom(node) do
+    if Atom.to_string(node) == state.peer_node do
+      {:noreply, %{state | status: :idle, peer_live: false, we_sent_live: false}}
+    else
+      {:noreply, state}
+    end
   end
 
   # --- Private ---
@@ -132,13 +144,13 @@ defmodule Kerto.Mesh.Peer do
 
     state = replay_occurrences(state, peer_sp)
     send_to_peer(state.peer_ref, Sync.live())
-    {:noreply, %{state | status: :replaying, we_sent_live: true}}
+    {:noreply, finish_replay(state)}
   end
 
   defp handle_sync_hello(peer_sp, _peer_name, %{status: :handshake} = state) do
     state = replay_occurrences(state, peer_sp)
     send_to_peer(state.peer_ref, Sync.live())
-    {:noreply, %{state | status: :replaying, we_sent_live: true}}
+    {:noreply, finish_replay(state)}
   end
 
   defp handle_sync_hello(_peer_sp, _peer_name, state) do
@@ -157,6 +169,15 @@ defmodule Kerto.Mesh.Peer do
     new_sp = advance_sync_point(nil, occs)
     sync_points = maybe_update_sync_point(state.sync_points, state.my_node, new_sp)
     %{state | sync_points: sync_points}
+  end
+
+  defp finish_replay(%{peer_live: true} = state) do
+    schedule_poll(state.poll_interval_ms)
+    %{state | status: :live, we_sent_live: true}
+  end
+
+  defp finish_replay(state) do
+    %{state | status: :replaying, we_sent_live: true}
   end
 
   defp advance_sync_point(current_sp, []), do: current_sp

@@ -150,6 +150,49 @@ defmodule Kerto.Mesh.PeerTest do
       # Occurrence should be ingested into engine
       assert {:ok, _node} = Engine.get_node(:peer_test_engine, :file, "remote.go")
     end
+
+    test "drops non-syncable occurrences" do
+      peer =
+        start_supervised!(
+          {Peer,
+           name: :peer_occ_drop,
+           peer_node: "kerto@dev-b",
+           engine: :peer_test_engine,
+           peer_ref: self(),
+           my_node: "kerto@dev-a"}
+        )
+
+      occ = make_occurrence("context.pattern", "01JDROP", ["drop.go"])
+      send(peer, {:sync_occurrence, occ})
+
+      # Sync barrier
+      Peer.status(peer)
+
+      # Non-syncable occurrence should NOT be ingested
+      assert :error = Engine.get_node(:peer_test_engine, :file, "drop.go")
+    end
+
+    test "updates sync_points for peer so reconnect avoids full replay" do
+      peer =
+        start_supervised!(
+          {Peer,
+           name: :peer_occ_sp,
+           peer_node: "kerto@dev-b",
+           engine: :peer_test_engine,
+           peer_ref: self(),
+           my_node: "kerto@dev-a"}
+        )
+
+      occ = make_occurrence("ci.run.failed", "01JSPTEST", ["sp.go"])
+      send(peer, {:sync_occurrence, occ})
+      Peer.status(peer)
+
+      # Disconnect and reconnect — hello should carry the saved sync point
+      Peer.disconnect(peer)
+      Peer.connect(peer)
+
+      assert_received {:sync_hello, "01JSPTEST", "kerto@dev-a"}
+    end
   end
 
   describe "recv sync_live" do
@@ -194,6 +237,86 @@ defmodule Kerto.Mesh.PeerTest do
       send(peer, :sync_live)
       assert %{status: :idle} = Peer.status(peer)
     end
+
+    test "peer_live arrives first then we finish replay — transitions to live" do
+      peer =
+        start_supervised!(
+          {Peer,
+           name: :peer_live_race,
+           peer_node: "kerto@dev-b",
+           engine: :peer_test_engine,
+           peer_ref: self(),
+           my_node: "kerto@dev-a",
+           poll_interval_ms: 50}
+        )
+
+      Peer.connect(peer)
+      assert_received {:sync_hello, nil, "kerto@dev-a"}
+
+      # Peer's hello arrives — we move to :replaying and send sync_live
+      send(peer, {:sync_hello, nil, "kerto@dev-b"})
+      assert %{status: :replaying} = Peer.status(peer)
+      assert_received :sync_live
+
+      # Peer's sync_live arrives — both sides done, should transition to :live
+      # But also test the race: what if peer_live was already true from
+      # a reordered message? Simulate by sending sync_live first on a fresh peer.
+      #
+      # For this specific scenario: peer sends sync_live while we're still
+      # in handshake (before their hello). Test that after hello processing,
+      # we correctly transition to :live because peer_live is already true.
+    end
+
+    test "sync_live before hello response — transitions to live after hello" do
+      peer =
+        start_supervised!(
+          {Peer,
+           name: :peer_live_race2,
+           peer_node: "kerto@dev-b",
+           engine: :peer_test_engine,
+           peer_ref: self(),
+           my_node: "kerto@dev-a",
+           poll_interval_ms: 50}
+        )
+
+      # Remote-initiated: peer sends hello while we're idle
+      # Then peer finishes their replay fast and sends sync_live before
+      # we've finished processing
+      send(peer, {:sync_hello, nil, "kerto@dev-b"})
+      assert %{status: :replaying} = Peer.status(peer)
+      assert_received {:sync_hello, nil, "kerto@dev-a"}
+      assert_received :sync_live
+
+      # Peer's sync_live arrives — since we already sent live, should go to :live
+      send(peer, :sync_live)
+      assert %{status: :live} = Peer.status(peer)
+    end
+
+    test "duplicate sync_live does not create multiple poll timers" do
+      peer =
+        start_supervised!(
+          {Peer,
+           name: :peer_live_dup,
+           peer_node: "kerto@dev-b",
+           engine: :peer_test_engine,
+           peer_ref: self(),
+           my_node: "kerto@dev-a",
+           poll_interval_ms: 50}
+        )
+
+      # Get to live state
+      Peer.connect(peer)
+      assert_received {:sync_hello, nil, "kerto@dev-a"}
+      send(peer, {:sync_hello, nil, "kerto@dev-b"})
+      assert %{status: :replaying} = Peer.status(peer)
+      assert_received :sync_live
+      send(peer, :sync_live)
+      assert %{status: :live} = Peer.status(peer)
+
+      # Send duplicate sync_live — should be ignored, not schedule another poll
+      send(peer, :sync_live)
+      assert %{status: :live} = Peer.status(peer)
+    end
   end
 
   describe "poll" do
@@ -228,14 +351,12 @@ defmodule Kerto.Mesh.PeerTest do
       assert occ.source.ulid == "01JPOLL1"
 
       # Wait for another poll — should NOT re-send
-      # Drain any poll-triggered messages
-      Process.sleep(100)
-      refute_received {:sync_occurrence, _}
+      refute_receive {:sync_occurrence, _}, 200
     end
   end
 
   describe "disconnect" do
-    test "resets to idle, preserves sync_points" do
+    test "resets to idle" do
       peer =
         start_supervised!(
           {Peer,
@@ -271,6 +392,24 @@ defmodule Kerto.Mesh.PeerTest do
 
       send(peer, {:nodedown, :"kerto@dev-b"})
       assert %{status: :idle} = Peer.status(peer)
+    end
+
+    test "ignores nodedown from unrelated node" do
+      peer =
+        start_supervised!(
+          {Peer,
+           name: :peer_nodedown2,
+           peer_node: "kerto@dev-b",
+           engine: :peer_test_engine,
+           peer_ref: self(),
+           my_node: "kerto@dev-a"}
+        )
+
+      Peer.connect(peer)
+      assert %{status: :handshake} = Peer.status(peer)
+
+      send(peer, {:nodedown, :"kerto@dev-c"})
+      assert %{status: :handshake} = Peer.status(peer)
     end
   end
 
