@@ -85,4 +85,27 @@ defmodule Kerto.Engine.PersistenceTest do
       assert Persistence.path("/some/dir") == "/some/dir/graph.etf"
     end
   end
+
+  describe "save_fingerprint/2 and load_fingerprint/1" do
+    test "round-trips a fingerprint string", %{tmp: tmp} do
+      :ok = Persistence.save_fingerprint(tmp, "abc123")
+      assert Persistence.load_fingerprint(tmp) == "abc123"
+    end
+
+    test "load_fingerprint returns nil when file missing", %{tmp: tmp} do
+      assert Persistence.load_fingerprint(tmp) == nil
+    end
+
+    test "trims whitespace from stored fingerprint", %{tmp: tmp} do
+      File.mkdir_p!(tmp)
+      File.write!(Persistence.fingerprint_path(tmp), "  abc123\n  ")
+      assert Persistence.load_fingerprint(tmp) == "abc123"
+    end
+
+    test "save creates directories if needed", %{tmp: tmp} do
+      nested = Path.join([tmp, "deep", "nested"])
+      :ok = Persistence.save_fingerprint(nested, "fp")
+      assert Persistence.load_fingerprint(nested) == "fp"
+    end
+  end
 end

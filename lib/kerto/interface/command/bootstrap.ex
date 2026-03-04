@@ -1,6 +1,7 @@
 defmodule Kerto.Interface.Command.Bootstrap do
   @moduledoc "Seeds the knowledge graph from git history and file tree."
 
+  alias Kerto.Engine.Persistence
   alias Kerto.Interface.{Response, ULID}
   alias Kerto.Ingestion.{Occurrence, Source}
 
@@ -8,13 +9,55 @@ defmodule Kerto.Interface.Command.Bootstrap do
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, _args) do
-    if Kerto.Engine.node_count(engine) > 10 do
-      Response.success("bootstrap skipped (graph already populated)")
-    else
-      case run_bootstrap(engine) do
-        {:ok, stats} -> Response.success("bootstrap complete: #{stats}")
-        {:error, reason} -> Response.error("bootstrap failed: #{reason}")
-      end
+    persistence_path = Kerto.Engine.persistence_path(engine)
+    stored_fp = if persistence_path, do: Persistence.load_fingerprint(persistence_path)
+    node_count = Kerto.Engine.node_count(engine)
+
+    cond do
+      stored_fp != nil ->
+        current_fp = git_root_commit()
+
+        if current_fp != nil and stored_fp != current_fp do
+          Kerto.Engine.clear(engine)
+          do_bootstrap(engine, persistence_path, current_fp, "re-bootstrap (repo changed)")
+        else
+          if node_count > 10 do
+            Response.success("bootstrap skipped (graph already populated)")
+          else
+            do_bootstrap(engine, persistence_path, current_fp, "bootstrap complete")
+          end
+        end
+
+      node_count > 10 ->
+        Response.success("bootstrap skipped (graph already populated)")
+
+      true ->
+        current_fp = git_root_commit()
+        do_bootstrap(engine, persistence_path, current_fp, "bootstrap complete")
+    end
+  end
+
+  defp do_bootstrap(engine, persistence_path, fingerprint, prefix) do
+    case run_bootstrap(engine) do
+      {:ok, stats} ->
+        maybe_save_fingerprint(persistence_path, fingerprint)
+        Response.success("#{prefix}: #{stats}")
+
+      {:error, reason} ->
+        Response.error("bootstrap failed: #{reason}")
+    end
+  end
+
+  defp maybe_save_fingerprint(nil, _fingerprint), do: :ok
+  defp maybe_save_fingerprint(_path, nil), do: :ok
+
+  defp maybe_save_fingerprint(path, fingerprint),
+    do: Persistence.save_fingerprint(path, fingerprint)
+
+  defp git_root_commit do
+    case System.cmd("git", ["rev-list", "--max-parents=0", "HEAD"], stderr_to_stdout: true) do
+      {output, 0} -> output |> String.trim() |> String.split("\n") |> List.first()
+      _ -> nil
     end
   end
 

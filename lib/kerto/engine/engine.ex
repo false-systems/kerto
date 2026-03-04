@@ -80,6 +80,16 @@ defmodule Kerto.Engine do
     OccurrenceLog.count(child_name(engine, :log))
   end
 
+  @spec clear(atom()) :: :ok
+  def clear(engine \\ __MODULE__) do
+    Store.clear(child_name(engine, :store))
+  end
+
+  @spec persistence_path(atom()) :: String.t() | nil
+  def persistence_path(engine \\ __MODULE__) do
+    Store.persistence_path(child_name(engine, :store))
+  end
+
   @spec node_count(atom()) :: non_neg_integer()
   def node_count(engine \\ __MODULE__) do
     Store.node_count(child_name(engine, :store))
