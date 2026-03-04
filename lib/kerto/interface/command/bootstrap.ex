@@ -10,19 +10,29 @@ defmodule Kerto.Interface.Command.Bootstrap do
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, _args) do
     persistence_path = Kerto.Engine.persistence_path(engine)
-    current_fp = git_root_commit()
     stored_fp = if persistence_path, do: Persistence.load_fingerprint(persistence_path)
+    node_count = Kerto.Engine.node_count(engine)
 
     cond do
-      stored_fp != nil and current_fp != nil and stored_fp != current_fp ->
-        Kerto.Engine.clear(engine)
-        do_bootstrap(engine, persistence_path, current_fp, "re-bootstrap (repo changed)")
+      stored_fp != nil ->
+        current_fp = git_root_commit()
 
-      Kerto.Engine.node_count(engine) > 10 ->
-        maybe_save_fingerprint(persistence_path, current_fp)
+        if current_fp != nil and stored_fp != current_fp do
+          Kerto.Engine.clear(engine)
+          do_bootstrap(engine, persistence_path, current_fp, "re-bootstrap (repo changed)")
+        else
+          if node_count > 10 do
+            Response.success("bootstrap skipped (graph already populated)")
+          else
+            do_bootstrap(engine, persistence_path, current_fp, "bootstrap complete")
+          end
+        end
+
+      node_count > 10 ->
         Response.success("bootstrap skipped (graph already populated)")
 
       true ->
+        current_fp = git_root_commit()
         do_bootstrap(engine, persistence_path, current_fp, "bootstrap complete")
     end
   end

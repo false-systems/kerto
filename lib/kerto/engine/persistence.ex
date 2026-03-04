@@ -30,11 +30,18 @@ defmodule Kerto.Engine.Persistence do
 
   @spec save_fingerprint(String.t(), String.t()) :: :ok | {:error, term()}
   def save_fingerprint(base_dir, fingerprint) when is_binary(fingerprint) do
-    dir = base_dir
-
-    with :ok <- File.mkdir_p(dir),
+    with :ok <- File.mkdir_p(base_dir),
          :ok <- File.write(fingerprint_path(base_dir), fingerprint) do
       :ok
+    else
+      {:error, reason} ->
+        require Logger
+
+        Logger.warning(
+          "Persistence failed for fingerprint #{fingerprint_path(base_dir)}: #{inspect(reason)}"
+        )
+
+        {:error, reason}
     end
   end
 
