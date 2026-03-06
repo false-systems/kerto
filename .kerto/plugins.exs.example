@@ -1,0 +1,11 @@
+# Kerto plugin configuration
+# Copy this file to plugins.exs and uncomment the plugins you want:
+#
+# cp .kerto/plugins.exs.example .kerto/plugins.exs
+#
+# Each entry is a module implementing the Kerto.Plugin behaviour.
+
+[
+  # Kerto.Plugin.Claude,
+  # Kerto.Plugin.Logs,
+]

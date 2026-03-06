@@ -13,3 +13,5 @@ erl_crash.dump
 .kerto/kerto.sock
 .kerto/kerto.pid
 .kerto/kerto.log
+.kerto/AGENT.md
+.kerto/plugins.exs
