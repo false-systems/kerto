@@ -50,7 +50,44 @@ defmodule Kerto.Interface.Parser do
     "start" => [],
     "stop" => [],
     "bootstrap" => [],
-    "hint" => [files: :string]
+    "hint" => [files: :string],
+    "forget" => [
+      node: :string,
+      kind: :string,
+      source: :string,
+      target: :string,
+      relation: :string,
+      source_kind: :string,
+      target_kind: :string
+    ],
+    "pin" => [
+      node: :string,
+      kind: :string,
+      source: :string,
+      target: :string,
+      relation: :string,
+      source_kind: :string,
+      target_kind: :string
+    ],
+    "unpin" => [
+      node: :string,
+      kind: :string,
+      source: :string,
+      target: :string,
+      relation: :string,
+      source_kind: :string,
+      target_kind: :string
+    ],
+    "list" => [
+      type: :string,
+      kind: :string,
+      pinned: :boolean,
+      below: :float,
+      relation: :string
+    ],
+    "scan" => [],
+    "team" => [action: :string, name: :string, csr: :string],
+    "mesh" => [action: :string, peer: :string]
   }
 
   @atom_fields ~w(kind format relation source_kind target_kind subject_kind)a

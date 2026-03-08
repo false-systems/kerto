@@ -21,7 +21,14 @@ defmodule Kerto.Interface.Dispatcher do
     "start" => Command.Start,
     "stop" => Command.Stop,
     "bootstrap" => Command.Bootstrap,
-    "hint" => Command.Hint
+    "hint" => Command.Hint,
+    "forget" => Command.Forget,
+    "pin" => Command.Pin,
+    "unpin" => Command.Unpin,
+    "list" => Command.List,
+    "scan" => Command.Scan,
+    "team" => Command.Team,
+    "mesh" => Command.Mesh
   }
 
   @spec dispatch(String.t(), atom(), map()) :: Response.t()

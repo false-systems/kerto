@@ -3,7 +3,7 @@ defmodule Kerto.Interface.MCP do
 
   alias Kerto.Interface.{ContextWriter, Dispatcher, Protocol}
 
-  @mutating_commands ~w(learn decide ingest observe decay weaken delete)
+  @mutating_commands ~w(learn decide ingest observe decay weaken delete forget pin unpin scan)
 
   @tools [
     %{
@@ -118,6 +118,101 @@ defmodule Kerto.Interface.MCP do
         },
         required: ["files"]
       }
+    },
+    %{
+      name: "kerto_forget",
+      description: "Remove a node or relationship from the knowledge graph",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          node: %{type: "string", description: "Node name to forget"},
+          kind: %{type: "string", description: "Node kind (default: file)"},
+          source: %{type: "string", description: "Source name (for relationship forget)"},
+          relation: %{type: "string", description: "Relationship type"},
+          target: %{type: "string", description: "Target name (for relationship forget)"},
+          source_kind: %{type: "string", description: "Source kind (default: file)"},
+          target_kind: %{type: "string", description: "Target kind (default: file)"}
+        }
+      }
+    },
+    %{
+      name: "kerto_pin",
+      description: "Pin a node or relationship so it never decays or gets pruned",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          node: %{type: "string", description: "Node name to pin"},
+          kind: %{type: "string", description: "Node kind (default: file)"},
+          source: %{type: "string", description: "Source name (for relationship pin)"},
+          relation: %{type: "string", description: "Relationship type"},
+          target: %{type: "string", description: "Target name (for relationship pin)"},
+          source_kind: %{type: "string", description: "Source kind (default: file)"},
+          target_kind: %{type: "string", description: "Target kind (default: file)"}
+        }
+      }
+    },
+    %{
+      name: "kerto_unpin",
+      description: "Unpin a node or relationship, allowing normal decay",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          node: %{type: "string", description: "Node name to unpin"},
+          kind: %{type: "string", description: "Node kind (default: file)"},
+          source: %{type: "string", description: "Source name (for relationship unpin)"},
+          relation: %{type: "string", description: "Relationship type"},
+          target: %{type: "string", description: "Target name (for relationship unpin)"},
+          source_kind: %{type: "string", description: "Source kind (default: file)"},
+          target_kind: %{type: "string", description: "Target kind (default: file)"}
+        }
+      }
+    },
+    %{
+      name: "kerto_team",
+      description: "Manage team PKI (CA, certificates, membership)",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          action: %{type: "string", description: "init, join, sign, or list"},
+          name: %{type: "string", description: "Team or node name"},
+          csr: %{type: "string", description: "Path to CSR file (for sign)"}
+        },
+        required: ["action"]
+      }
+    },
+    %{
+      name: "kerto_mesh",
+      description: "Manage mesh network (peers, connections)",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          action: %{type: "string", description: "status, connect, add-peer, or remove-peer"},
+          peer: %{type: "string", description: "Peer node name (node@host)"}
+        },
+        required: ["action"]
+      }
+    },
+    %{
+      name: "kerto_scan",
+      description: "Manually trigger a plugin scan cycle for passive learning",
+      inputSchema: %{type: "object", properties: %{}}
+    },
+    %{
+      name: "kerto_list",
+      description: "List nodes or relationships with optional filters",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          type: %{
+            type: "string",
+            description: "What to list: nodes or relationships (default: nodes)"
+          },
+          kind: %{type: "string", description: "Filter by node kind"},
+          pinned: %{type: "boolean", description: "Show only pinned entities"},
+          below: %{type: "number", description: "Show entities below this relevance/weight"},
+          relation: %{type: "string", description: "Filter by relation type (relationships only)"}
+        }
+      }
     }
   ]
 
@@ -129,7 +224,14 @@ defmodule Kerto.Interface.MCP do
     "kerto_graph" => "graph",
     "kerto_observe" => "observe",
     "kerto_weaken" => "weaken",
-    "kerto_hint" => "hint"
+    "kerto_hint" => "hint",
+    "kerto_forget" => "forget",
+    "kerto_pin" => "pin",
+    "kerto_unpin" => "unpin",
+    "kerto_list" => "list",
+    "kerto_scan" => "scan",
+    "kerto_team" => "team",
+    "kerto_mesh" => "mesh"
   }
 
   @spec run(atom(), GenServer.server() | nil) :: no_return()
