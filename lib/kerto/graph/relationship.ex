@@ -27,7 +27,8 @@ defmodule Kerto.Graph.Relationship do
     :observations,
     :first_seen,
     :last_seen,
-    :evidence
+    :evidence,
+    pinned: false
   ]
 
   @type t :: %__MODULE__{
@@ -38,7 +39,8 @@ defmodule Kerto.Graph.Relationship do
           observations: non_neg_integer(),
           first_seen: String.t(),
           last_seen: String.t(),
-          evidence: [String.t()]
+          evidence: [String.t()],
+          pinned: boolean()
         }
 
   @rel_death_threshold 0.05

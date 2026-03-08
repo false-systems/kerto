@@ -68,11 +68,41 @@ defmodule Kerto.Graph.Graph do
   @spec list_nodes(t(), keyword()) :: [Node.t()]
   def list_nodes(%__MODULE__{nodes: nodes}, opts \\ []) do
     kind = Keyword.get(opts, :kind)
+    pinned = Keyword.get(opts, :pinned)
+    below = Keyword.get(opts, :below)
 
     nodes
     |> Map.values()
     |> then(fn ns -> if kind, do: Enum.filter(ns, &(&1.kind == kind)), else: ns end)
+    |> then(fn ns ->
+      case pinned do
+        true -> Enum.filter(ns, & &1.pinned)
+        false -> Enum.reject(ns, & &1.pinned)
+        nil -> ns
+      end
+    end)
+    |> then(fn ns -> if below, do: Enum.filter(ns, &(&1.relevance < below)), else: ns end)
     |> Enum.sort_by(& &1.relevance, :desc)
+  end
+
+  @spec list_relationships(t(), keyword()) :: [Relationship.t()]
+  def list_relationships(%__MODULE__{relationships: rels}, opts \\ []) do
+    pinned = Keyword.get(opts, :pinned)
+    below = Keyword.get(opts, :below)
+    relation = Keyword.get(opts, :relation)
+
+    rels
+    |> Map.values()
+    |> then(fn rs ->
+      case pinned do
+        true -> Enum.filter(rs, & &1.pinned)
+        false -> Enum.reject(rs, & &1.pinned)
+        nil -> rs
+      end
+    end)
+    |> then(fn rs -> if below, do: Enum.filter(rs, &(&1.weight < below)), else: rs end)
+    |> then(fn rs -> if relation, do: Enum.filter(rs, &(&1.relation == relation)), else: rs end)
+    |> Enum.sort_by(& &1.weight, :desc)
   end
 
   @spec get_node(t(), String.t()) :: {:ok, Node.t()} | :error
@@ -151,6 +181,44 @@ defmodule Kerto.Graph.Graph do
     end
   end
 
+  @spec pin_node(t(), String.t()) :: {t(), :ok | :error}
+  def pin_node(%__MODULE__{} = graph, node_id) do
+    case Map.get(graph.nodes, node_id) do
+      nil -> {graph, :error}
+      node -> {%{graph | nodes: Map.put(graph.nodes, node_id, %{node | pinned: true})}, :ok}
+    end
+  end
+
+  @spec unpin_node(t(), String.t()) :: {t(), :ok | :error}
+  def unpin_node(%__MODULE__{} = graph, node_id) do
+    case Map.get(graph.nodes, node_id) do
+      nil -> {graph, :error}
+      node -> {%{graph | nodes: Map.put(graph.nodes, node_id, %{node | pinned: false})}, :ok}
+    end
+  end
+
+  @spec pin_relationship(t(), relationship_key()) :: {t(), :ok | :error}
+  def pin_relationship(%__MODULE__{} = graph, key) do
+    case Map.get(graph.relationships, key) do
+      nil ->
+        {graph, :error}
+
+      rel ->
+        {%{graph | relationships: Map.put(graph.relationships, key, %{rel | pinned: true})}, :ok}
+    end
+  end
+
+  @spec unpin_relationship(t(), relationship_key()) :: {t(), :ok | :error}
+  def unpin_relationship(%__MODULE__{} = graph, key) do
+    case Map.get(graph.relationships, key) do
+      nil ->
+        {graph, :error}
+
+      rel ->
+        {%{graph | relationships: Map.put(graph.relationships, key, %{rel | pinned: false})}, :ok}
+    end
+  end
+
   @spec delete_node(t(), String.t()) :: {t(), :ok | :error}
   def delete_node(%__MODULE__{} = graph, node_id) do
     case Map.get(graph.nodes, node_id) do
@@ -186,15 +254,19 @@ defmodule Kerto.Graph.Graph do
   def decay_all(%__MODULE__{} = graph, factor) when is_float(factor) do
     nodes =
       graph.nodes
-      |> Map.new(fn {id, node} -> {id, Node.decay(node, factor)} end)
+      |> Map.new(fn {id, node} ->
+        if node.pinned, do: {id, node}, else: {id, Node.decay(node, factor)}
+      end)
 
     relationships =
       graph.relationships
-      |> Map.new(fn {key, rel} -> {key, Relationship.decay(rel, factor)} end)
-      |> Enum.reject(fn {_key, rel} -> Relationship.dead?(rel) end)
+      |> Map.new(fn {key, rel} ->
+        if rel.pinned, do: {key, rel}, else: {key, Relationship.decay(rel, factor)}
+      end)
+      |> Enum.reject(fn {_key, rel} -> not rel.pinned and Relationship.dead?(rel) end)
       |> Map.new()
 
-    # Prune dead nodes with no relationships
+    # Prune dead nodes with no relationships (never prune pinned)
     connected_node_ids =
       relationships
       |> Map.values()
@@ -204,7 +276,7 @@ defmodule Kerto.Graph.Graph do
     nodes =
       nodes
       |> Enum.reject(fn {id, node} ->
-        Node.dead?(node) and not MapSet.member?(connected_node_ids, id)
+        not node.pinned and Node.dead?(node) and not MapSet.member?(connected_node_ids, id)
       end)
       |> Map.new()
 

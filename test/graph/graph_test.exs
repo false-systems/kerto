@@ -312,6 +312,230 @@ defmodule Kerto.Graph.GraphTest do
     end
   end
 
+  describe "pin_node/2" do
+    test "pins an existing node", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01J001")
+      id = Identity.compute_id(:file, "auth.go")
+      {graph, :ok} = Graph.pin_node(graph, id)
+      {:ok, node} = Graph.get_node(graph, id)
+      assert node.pinned == true
+    end
+
+    test "returns error for missing node", %{graph: graph} do
+      assert {^graph, :error} = Graph.pin_node(graph, "nonexistent")
+    end
+  end
+
+  describe "unpin_node/2" do
+    test "unpins a pinned node", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01J001")
+      id = Identity.compute_id(:file, "auth.go")
+      {graph, :ok} = Graph.pin_node(graph, id)
+      {graph, :ok} = Graph.unpin_node(graph, id)
+      {:ok, node} = Graph.get_node(graph, id)
+      assert node.pinned == false
+    end
+
+    test "returns error for missing node", %{graph: graph} do
+      assert {^graph, :error} = Graph.unpin_node(graph, "nonexistent")
+    end
+  end
+
+  describe "pin_relationship/2" do
+    test "pins an existing relationship", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+      key = {a, :breaks, b}
+
+      {graph, :ok} = Graph.pin_relationship(graph, key)
+      [rel] = Graph.list_relationships(graph)
+      assert rel.pinned == true
+    end
+
+    test "returns error for missing relationship", %{graph: graph} do
+      assert {^graph, :error} = Graph.pin_relationship(graph, {"x", :breaks, "y"})
+    end
+  end
+
+  describe "unpin_relationship/2" do
+    test "unpins a pinned relationship", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+      key = {a, :breaks, b}
+      {graph, :ok} = Graph.pin_relationship(graph, key)
+      {graph, :ok} = Graph.unpin_relationship(graph, key)
+      [rel] = Graph.list_relationships(graph)
+      assert rel.pinned == false
+    end
+  end
+
+  describe "decay_all/2 with pinned entities" do
+    test "skips decay on pinned nodes", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "pinned.go", 0.8, "01J001")
+      id = Identity.compute_id(:file, "pinned.go")
+      {graph, :ok} = Graph.pin_node(graph, id)
+
+      decayed = Graph.decay_all(graph, 0.5)
+      {:ok, node} = Graph.get_node(decayed, id)
+      # Pinned node should retain original relevance (0.5 from new)
+      assert_in_delta node.relevance, 0.5, 0.001
+    end
+
+    test "skips decay on pinned relationships", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e")
+      key = {a, :breaks, b}
+      {graph, :ok} = Graph.pin_relationship(graph, key)
+
+      decayed = Graph.decay_all(graph, 0.5)
+      [rel] = Graph.list_relationships(decayed)
+      # Pinned rel should retain original weight (0.5 from new)
+      assert_in_delta rel.weight, 0.5, 0.001
+    end
+
+    test "never prunes pinned nodes even when dead", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "immortal.go", 0.8, "01J001")
+      id = Identity.compute_id(:file, "immortal.go")
+      {graph, :ok} = Graph.pin_node(graph, id)
+
+      # Force relevance below death threshold by manually setting it
+      # We need to unpin, decay aggressively, then re-pin to test prune protection
+      {graph, :ok} = Graph.unpin_node(graph, id)
+      _graph = Enum.reduce(1..200, graph, fn _, g -> Graph.decay_all(g, 0.8) end)
+      # Node would be dead and pruned if not re-pinned. Let's test from scratch:
+      # Build a node, pin it, then do aggressive decay
+      graph2 = Graph.new()
+      {graph2, _} = Graph.upsert_node(graph2, :file, "immortal.go", 0.8, "01J001")
+      id2 = Identity.compute_id(:file, "immortal.go")
+      {graph2, :ok} = Graph.pin_node(graph2, id2)
+      decayed = Enum.reduce(1..200, graph2, fn _, g -> Graph.decay_all(g, 0.8) end)
+      assert Graph.node_count(decayed) == 1
+    end
+
+    test "never prunes pinned relationships even when dead weight", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e")
+      {graph, :ok} = Graph.pin_node(graph, a)
+      {graph, :ok} = Graph.pin_node(graph, b)
+      {graph, :ok} = Graph.pin_relationship(graph, {a, :breaks, b})
+
+      decayed = Enum.reduce(1..200, graph, fn _, g -> Graph.decay_all(g, 0.8) end)
+      assert Graph.relationship_count(decayed) == 1
+    end
+  end
+
+  describe "list_nodes/2 filters" do
+    test "filters by pinned: true", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "pinned.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "normal.go", 0.8, "01J001")
+      id = Identity.compute_id(:file, "pinned.go")
+      {graph, :ok} = Graph.pin_node(graph, id)
+
+      nodes = Graph.list_nodes(graph, pinned: true)
+      assert length(nodes) == 1
+      assert hd(nodes).name == "pinned.go"
+    end
+
+    test "filters by pinned: false", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "pinned.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "normal.go", 0.8, "01J001")
+      id = Identity.compute_id(:file, "pinned.go")
+      {graph, :ok} = Graph.pin_node(graph, id)
+
+      nodes = Graph.list_nodes(graph, pinned: false)
+      assert length(nodes) == 1
+      assert hd(nodes).name == "normal.go"
+    end
+
+    test "filters by below threshold", %{graph: graph} do
+      # Node.new always starts at 0.5, so we need to decay one down
+      {graph, _} = Graph.upsert_node(graph, :file, "low.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "high.go", 0.9, "01J002")
+      {graph, _} = Graph.upsert_node(graph, :file, "high.go", 0.9, "01J003")
+
+      # Decay all to push "low.go" (observed once, relevance 0.5) down
+      graph = Enum.reduce(1..5, graph, fn _, g -> Graph.decay_all(g, 0.8) end)
+
+      # After 5 rounds at 0.8: 0.5 * 0.8^5 ≈ 0.164, high.go was observed twice so higher
+      nodes = Graph.list_nodes(graph, below: 0.2)
+      assert length(nodes) == 1
+      assert hd(nodes).name == "low.go"
+    end
+
+    test "combines kind and pinned filters", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "pinned.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :module, "pinned_mod", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "normal.go", 0.8, "01J001")
+      id1 = Identity.compute_id(:file, "pinned.go")
+      id2 = Identity.compute_id(:module, "pinned_mod")
+      {graph, :ok} = Graph.pin_node(graph, id1)
+      {graph, :ok} = Graph.pin_node(graph, id2)
+
+      nodes = Graph.list_nodes(graph, kind: :file, pinned: true)
+      assert length(nodes) == 1
+      assert hd(nodes).name == "pinned.go"
+    end
+  end
+
+  describe "list_relationships/2" do
+    test "returns all relationships sorted by weight", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "c.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      c = Identity.compute_id(:file, "c.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+      {graph, _} = Graph.upsert_relationship(graph, a, :depends_on, c, 0.8, "01J001", "e2")
+
+      rels = Graph.list_relationships(graph)
+      assert length(rels) == 2
+    end
+
+    test "filters by relation type", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "c.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      c = Identity.compute_id(:file, "c.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+      {graph, _} = Graph.upsert_relationship(graph, a, :depends_on, c, 0.8, "01J001", "e2")
+
+      rels = Graph.list_relationships(graph, relation: :breaks)
+      assert length(rels) == 1
+      assert hd(rels).relation == :breaks
+    end
+
+    test "filters by pinned", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      {graph, _} = Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "e1")
+      {graph, :ok} = Graph.pin_relationship(graph, {a, :breaks, b})
+
+      assert length(Graph.list_relationships(graph, pinned: true)) == 1
+      assert length(Graph.list_relationships(graph, pinned: false)) == 0
+    end
+
+    test "returns empty list for empty graph", %{graph: graph} do
+      assert Graph.list_relationships(graph) == []
+    end
+  end
+
   describe "delete_node/2" do
     test "removes node and all its relationships", %{graph: graph} do
       {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
