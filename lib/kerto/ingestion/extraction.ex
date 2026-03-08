@@ -23,6 +23,10 @@ defmodule Kerto.Ingestion.Extraction do
 
   def extract(%Occurrence{type: "bootstrap.file_tree"} = occ), do: Extractor.FileTree.extract(occ)
   def extract(%Occurrence{type: "agent.tool_error"} = occ), do: Extractor.ToolError.extract(occ)
+  def extract(%Occurrence{type: "agent.file_read"} = occ), do: Extractor.FileRead.extract(occ)
+
+  def extract(%Occurrence{type: "agent.approach_abandoned"} = occ),
+    do: Extractor.ApproachAbandoned.extract(occ)
 
   def extract(%Occurrence{}), do: []
 end
