@@ -126,6 +126,14 @@ defmodule Kerto.Mesh.Peer do
 
   def handle_info(:poll, state), do: {:noreply, state}
 
+  def handle_info(:new_occurrence, %{status: :live} = state) do
+    # Nudge from :pg — trigger immediate poll instead of waiting for timer
+    send(self(), :poll)
+    {:noreply, state}
+  end
+
+  def handle_info(:new_occurrence, state), do: {:noreply, state}
+
   def handle_info({:nodedown, node}, state) when is_atom(node) do
     if Atom.to_string(node) == state.peer_node do
       {:noreply, %{state | status: :idle, peer_live: false, we_sent_live: false}}
