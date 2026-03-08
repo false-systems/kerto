@@ -75,6 +75,34 @@ defmodule Kerto.Engine.Store do
     )
   end
 
+  @spec pin_node(GenServer.server(), atom(), String.t()) :: :ok | {:error, :not_found}
+  def pin_node(server \\ __MODULE__, kind, name) do
+    GenServer.call(server, {:pin_node, kind, name})
+  end
+
+  @spec unpin_node(GenServer.server(), atom(), String.t()) :: :ok | {:error, :not_found}
+  def unpin_node(server \\ __MODULE__, kind, name) do
+    GenServer.call(server, {:unpin_node, kind, name})
+  end
+
+  @spec pin_relationship(GenServer.server(), atom(), String.t(), atom(), atom(), String.t()) ::
+          :ok | {:error, :not_found}
+  def pin_relationship(server \\ __MODULE__, src_kind, src_name, relation, tgt_kind, tgt_name) do
+    GenServer.call(
+      server,
+      {:pin_relationship, src_kind, src_name, relation, tgt_kind, tgt_name}
+    )
+  end
+
+  @spec unpin_relationship(GenServer.server(), atom(), String.t(), atom(), atom(), String.t()) ::
+          :ok | {:error, :not_found}
+  def unpin_relationship(server \\ __MODULE__, src_kind, src_name, relation, tgt_kind, tgt_name) do
+    GenServer.call(
+      server,
+      {:unpin_relationship, src_kind, src_name, relation, tgt_kind, tgt_name}
+    )
+  end
+
   @spec clear(GenServer.server()) :: :ok
   def clear(server \\ __MODULE__) do
     GenServer.call(server, :clear)
@@ -180,6 +208,74 @@ defmodule Kerto.Engine.Store do
     key = {src_id, relation, tgt_id}
 
     case Graph.delete_relationship(state.graph, key) do
+      {graph, :ok} ->
+        state = %{state | graph: graph}
+        maybe_persist(state)
+        {:reply, :ok, state}
+
+      {_graph, :error} ->
+        {:reply, {:error, :not_found}, state}
+    end
+  end
+
+  def handle_call({:pin_node, kind, name}, _from, state) do
+    id = Identity.compute_id(kind, name)
+
+    case Graph.pin_node(state.graph, id) do
+      {graph, :ok} ->
+        state = %{state | graph: graph}
+        maybe_persist(state)
+        {:reply, :ok, state}
+
+      {_graph, :error} ->
+        {:reply, {:error, :not_found}, state}
+    end
+  end
+
+  def handle_call({:unpin_node, kind, name}, _from, state) do
+    id = Identity.compute_id(kind, name)
+
+    case Graph.unpin_node(state.graph, id) do
+      {graph, :ok} ->
+        state = %{state | graph: graph}
+        maybe_persist(state)
+        {:reply, :ok, state}
+
+      {_graph, :error} ->
+        {:reply, {:error, :not_found}, state}
+    end
+  end
+
+  def handle_call(
+        {:pin_relationship, src_kind, src_name, relation, tgt_kind, tgt_name},
+        _from,
+        state
+      ) do
+    src_id = Identity.compute_id(src_kind, src_name)
+    tgt_id = Identity.compute_id(tgt_kind, tgt_name)
+    key = {src_id, relation, tgt_id}
+
+    case Graph.pin_relationship(state.graph, key) do
+      {graph, :ok} ->
+        state = %{state | graph: graph}
+        maybe_persist(state)
+        {:reply, :ok, state}
+
+      {_graph, :error} ->
+        {:reply, {:error, :not_found}, state}
+    end
+  end
+
+  def handle_call(
+        {:unpin_relationship, src_kind, src_name, relation, tgt_kind, tgt_name},
+        _from,
+        state
+      ) do
+    src_id = Identity.compute_id(src_kind, src_name)
+    tgt_id = Identity.compute_id(tgt_kind, tgt_name)
+    key = {src_id, relation, tgt_id}
+
+    case Graph.unpin_relationship(state.graph, key) do
       {graph, :ok} ->
         state = %{state | graph: graph}
         maybe_persist(state)
