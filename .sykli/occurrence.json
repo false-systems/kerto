@@ -1,0 +1,166 @@
+{
+  "ci_data": {
+    "git": {
+      "branch": "feat/configurable-plugins",
+      "changed_files": [
+        ".mcp.json",
+        "CLAUDE.md",
+        ".sykli/",
+        "tmp/"
+      ],
+      "recent_commits": [
+        {
+          "author": "Yair Etziony",
+          "message": "feat: add forget, pin, unpin, list, scan, team, mesh commands (L4)",
+          "sha": "240b2b4"
+        },
+        {
+          "author": "Yair Etziony",
+          "message": "feat: add mesh peer discovery, supervisor, and :pg forwarding (L3)",
+          "sha": "d9963b7"
+        },
+        {
+          "author": "Yair Etziony",
+          "message": "feat: add engine pin/list/plugin APIs and plugin system (L2)",
+          "sha": "b941592"
+        },
+        {
+          "author": "Yair Etziony",
+          "message": "feat: add file_read and approach_abandoned extractors (L1)",
+          "sha": "5749caf"
+        },
+        {
+          "author": "Yair Etziony",
+          "message": "feat: add pinning support to graph domain layer (L0)",
+          "sha": "f7ec498"
+        }
+      ],
+      "sha": "240b2b4"
+    },
+    "summary": {
+      "cached": 0,
+      "failed": 0,
+      "passed": 4,
+      "skipped": 0
+    },
+    "tasks": [
+      {
+        "blocks": [
+          "compile"
+        ],
+        "cached": false,
+        "command": "mix deps.get",
+        "duration_ms": 743,
+        "history": {
+          "avg_duration_ms": 146,
+          "pass_rate": 1.0,
+          "streak": 20
+        },
+        "inputs": [
+          "mix.exs",
+          "mix.lock"
+        ],
+        "name": "deps",
+        "status": "passed"
+      },
+      {
+        "cached": false,
+        "command": "mix format --check-formatted",
+        "duration_ms": 449,
+        "history": {
+          "avg_duration_ms": 267,
+          "failure_patterns": [
+            "%Sykli.Error{code: \"task_failed\", type: :execution, message: \"task 'format' failed\", task: \"format\", step: :run, command: \"mix format --check-formatted\", output: \"** (Mix) mix format failed due to --check-formatted.\\nThe following files are not formatted:\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/lib/kerto/interface/command/bootstrap.ex\\n\\e[0m\\n         |\\n 41  41  |  defp maybe_save_fingerprint(nil, _fingerprint), do: :ok\\n 42  42  |  defp maybe_save_fingerprint(_path, nil), do: :ok\\n 43     -|  defp maybe_save_fingerprint(path, fingerprint), do: Persistence.save_fingerprint(path, fingerprint)\\n 44  43  |\\n     44 +|  defp maybe_save_fingerprint(path, fingerprint),\\n     45 +|    do: Persistence.save_fingerprint(path, fingerprint)\\n     46 +|\\n 45  47  |  defp git_root_commit do\\n 46  48  |    case System.cmd(\\\"git\\\", [\\\"rev-list\\\", \\\"--max-parents=0\\\", \\\"HEAD\\\"], stderr_to_stdout: true) do\\n         |\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/test/interface/command/bootstrap_test.exs\\n\\e[0m\\n       |\\n12 12  |    start_supervised!(\\n13 13  |      {Kerto.Engine,\\n14    -|       name: :test_bootstrap_engine,\\n15    -|       persistence_path: tmp,\\n16    -|       decay_interval_ms: :timer.hours(1)}\\n   14 +|       name: :test_bootstrap_engine, persistence_path: tmp, decay_interval_ms: :timer.hours(1)}\\n17 15  |    )\\n18 16  |\\n       |\\n\\n\\n\\n\", exit_code: 1, duration_ms: 297, cause: nil, hints: [], notes: [\"task ran for 297ms before failing\"]}",
+            "%Sykli.Error{code: \"task_failed\", type: :execution, message: \"task 'format' failed\", task: \"format\", step: :run, command: \"mix format --check-formatted\", output: \"s done transitions to live and starts poll timer\\\" do\\n108     -|      peer = start_supervised!({Peer, name: :peer_live, peer_node: \\\"kerto@dev-b\\\", engine: :peer_test_engine, peer_ref: self(), my_node: \\\"kerto@dev-a\\\", poll_interval_ms: 50})\\n    157 +|      peer =\\n    158 +|        start_supervised!(\\n    159 +|          {Peer,\\n    160 +|           name: :peer_live,\\n    161 +|           peer_node: \\\"kerto@dev-b\\\",\\n    162 +|           engine: :peer_test_engine,\\n    163 +|           peer_ref: self(),\\n    164 +|           my_node: \\\"kerto@dev-a\\\",\\n    165 +|           poll_interval_ms: 50}\\n    166 +|        )\\n109 167  |\\n110 168  |      # Connect and do handshake\\n         |\\n123 181  |\\n124 182  |    test \\\"peer_live before we_sent_live stays in current state\\\" do\\n125     -|      peer = start_supervised!({Peer, name: :peer_live2, peer_node: \\\"kerto@dev-b\\\", engine: :peer_test_engine, peer_ref: self(), my_node: \\\"kerto@dev-a\\\"})\\n    183 +|      peer =\\n    184 +|        start_supervised!(\\n    185 +|          {Peer,\\n    186 +|           name: :peer_live2,\\n    187 +|           peer_node: \\\"kerto@dev-b\\\",\\n    188 +|           engine: :peer_test_engine,\\n    189 +|           peer_ref: self(),\\n    190 +|           my_node: \\\"kerto@dev-a\\\"}\\n    191 +|        )\\n126 192  |\\n127 193  |      # Receive sync_live before we've connected and replayed\\n         |\\n133 199  |  describe \\\"poll\\\" do\\n134 200  |    test \\\"forwards new local occurrences, advances sync point, no re-sends\\\" do\\n135     -|      peer = start_supervised!({Peer, name: :peer_poll, peer_node: \\\"kerto@dev-b\\\", engine: :peer_test_engine, peer_ref: self(), my_node: \\\"kerto@dev-a\\\", poll_interval_ms: 50})\\n    201 +|      peer =\\n    202 +|        start_supervised!(\\n    203 +|          {Peer,\\n    204 +|           name: :peer_poll,\\n    205 +|           peer_node: \\\"kerto@dev-b\\\",\\n    206 +|           engine: :peer_test_engine,\\n    207 +|           peer_ref: self(),\\n    208 +|           my_node: \\\"kerto@dev-a\\\",\\n    209 +|           poll_interval_ms: 50}\\n    210 +|        )\\n136 211  |\\n137 212  |      # Get to live state\\n         |\\n162 237  |  describe \\\"disconnect\\\" do\\n163 238  |    test \\\"resets to idle, preserves sync_points\\\" do\\n164     -|      peer = start_supervised!({Peer, name: :peer_disc, peer_node: \\\"kerto@dev-b\\\", engine: :peer_test_engine, peer_ref: self(), my_node: \\\"kerto@dev-a\\\"})\\n    239 +|      peer =\\n    240 +|        start_supervised!(\\n    241 +|          {Peer,\\n    242 +|           name: :peer_disc,\\n    243 +|           peer_node: \\\"kerto@dev-b\\\",\\n    244 +|           engine: :peer_test_engine,\\n    245 +|           peer_ref: self(),\\n    246 +|           my_node: \\\"kerto@dev-a\\\"}\\n    247 +|        )\\n165 248  |\\n166 249  |      Peer.connect(peer)\\n         |\\n174 257  |  describe \\\"nodedown\\\" do\\n175 258  |    test \\\"resets to idle\\\" do\\n176     -|      peer = start_supervised!({Peer, name: :peer_nodedown, peer_node: \\\"kerto@dev-b\\\", engine: :peer_test_engine, peer_ref: self(), my_node: \\\"kerto@dev-a\\\"})\\n    259 +|      peer =\\n    260 +|        start_supervised!(\\n    261 +|          {Peer,\\n    262 +|           name: :peer_nodedown,\\n    263 +|           peer_node: \\\"kerto@dev-b\\\",\\n    264 +|           engine: :peer_test_engine,\\n    265 +|           peer_ref: self(),\\n    266 +|           my_node: \\\"kerto@dev-a\\\"}\\n    267 +|        )\\n177 268  |\\n178 269  |      Peer.connect(peer)\\n         |\\n190 281  |      Engine.ingest(:peer_test_engine, make_occurrence(\\\"context.query\\\", \\\"01JNOTSYNC2\\\"))\\n191 282  |\\n192     -|      peer = start_supervised!({Peer, name: :peer_filter, peer_node: \\\"kerto@dev-b\\\", engine: :peer_test_engine, peer_ref: self(), my_node: \\\"kerto@dev-a\\\"})\\n    283 +|      peer =\\n    284 +|        start_supervised!(\\n    285 +|          {Peer,\\n    286 +|           name: :peer_filter,\\n    287 +|           peer_node: \\\"kerto@dev-b\\\",\\n    288 +|           engine: :peer_test_engine,\\n    289 +|           peer_ref: self(),\\n    290 +|           my_node: \\\"kerto@dev-a\\\"}\\n    291 +|        )\\n193 292  |\\n194 293  |      Peer.connect(peer)\\n         |\\n\\n\\n\\n\", exit_code: 1, duration_ms: 297, cause: nil, hints: [], notes: [\"task ran for 297ms before failing\"]}",
+            "%Sykli.Error{code: \"task_failed\", type: :execution, message: \"task 'format' failed\", task: \"format\", step: :run, command: \"mix format --check-formatted\", output: \"** (Mix) mix format failed due to --check-formatted.\\nThe following files are not formatted:\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/test/engine/decay_test.exs\\n\\e[0m\\n       |\\n33 33  |    end\\n34 34  |  end\\n35    -|\\n36 35  |end\\n37 36  |\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/test/rendering/hint_renderer_test.exs\\n\\e[0m\\n         |\\n 66  66  |    test \\\"coupling relation produces hint line\\\" do\\n 67  67  |      other = make_node(:file, \\\"store.ex\\\")\\n 68     -|      rel = make_rel(:file, \\\"engine.ex\\\", :often_changes_with, :file, \\\"store.ex\\\", weight: 0.6, observations: 5)\\n     68 +|\\n     69 +|      rel =\\n     70 +|        make_rel(:file, \\\"engine.ex\\\", :often_changes_with, :file, \\\"store.ex\\\",\\n     71 +|          weight: 0.6,\\n     72 +|          observations: 5\\n     73 +|        )\\n     74 +|\\n 69  75  |      ctx = make_context(:file, \\\"engine.ex\\\", [rel], [other])\\n 70  76  |\\n         |\\n119 125  |      target2 = make_node(:file, \\\"store.ex\\\")\\n120 126  |\\n121     -|      caution_rel = make_rel(:file, \\\"auth.ex\\\", :breaks, :file, \\\"deploy.sh\\\", weight: 0.5, observations: 1)\\n122     -|      coupling_rel = make_rel(:file, \\\"auth.ex\\\", :often_changes_with, :file, \\\"store.ex\\\", weight: 0.9, observations: 10)\\n    127 +|      caution_rel =\\n    128 +|        make_rel(:file, \\\"auth.ex\\\", :breaks, :file, \\\"deploy.sh\\\", weight: 0.5, observations: 1)\\n123 129  |\\n    130 +|      coupling_rel =\\n    131 +|        make_rel(:file, \\\"auth.ex\\\", :often_changes_with, :file, \\\"store.ex\\\",\\n    132 +|          weight: 0.9,\\n    133 +|          observations: 10\\n    134 +|        )\\n    135 +|\\n124 136  |      ctx = make_context(:file, \\\"auth.ex\\\", [coupling_rel, caution_rel], [target1, target2])\\n125 137  |\\n         |\\n\\n\\n\\n\", exit_code: 1, duration_ms: 283, cause: nil, hints: [], notes: [\"task ran for 283ms before failing\"]}"
+          ],
+          "flaky": true,
+          "last_failure": "2026-03-03T23:58:37.104723Z",
+          "pass_rate": 0.85,
+          "streak": 8
+        },
+        "inputs": [
+          "**/*.ex",
+          "**/*.exs"
+        ],
+        "name": "format",
+        "status": "passed"
+      },
+      {
+        "blocks": [
+          "test"
+        ],
+        "cached": false,
+        "command": "mix compile --warnings-as-errors",
+        "depends_on": [
+          "deps"
+        ],
+        "duration_ms": 358,
+        "history": {
+          "avg_duration_ms": 191,
+          "flaky": true,
+          "pass_rate": 0.85,
+          "streak": 8
+        },
+        "inputs": [
+          "**/*.ex",
+          "mix.exs"
+        ],
+        "name": "compile",
+        "status": "passed"
+      },
+      {
+        "cached": false,
+        "command": "mix test",
+        "depends_on": [
+          "compile"
+        ],
+        "duration_ms": 3949,
+        "history": {
+          "avg_duration_ms": 1962,
+          "flaky": true,
+          "pass_rate": 0.85,
+          "streak": 8
+        },
+        "inputs": [
+          "**/*.ex",
+          "**/*.exs"
+        ],
+        "name": "test",
+        "status": "passed"
+      }
+    ]
+  },
+  "history": {
+    "duration_ms": 5499,
+    "steps": [
+      {
+        "description": "deps",
+        "duration_ms": 743,
+        "status": "passed"
+      },
+      {
+        "description": "format",
+        "duration_ms": 449,
+        "status": "passed"
+      },
+      {
+        "description": "compile",
+        "duration_ms": 358,
+        "status": "passed"
+      },
+      {
+        "description": "test",
+        "duration_ms": 3949,
+        "status": "passed"
+      }
+    ]
+  },
+  "id": "711b71aa35232d61",
+  "outcome": "passed",
+  "severity": "info",
+  "source": "sykli",
+  "timestamp": "2026-03-08T14:16:22.930011Z",
+  "type": "ci.run.passed",
+  "version": "1.0"
+}

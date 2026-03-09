@@ -9,7 +9,17 @@ defmodule Kerto.Graph.Node do
   alias Kerto.Graph.{EWMA, Identity, NodeKind}
 
   @enforce_keys [:id, :name, :kind, :relevance, :observations, :first_seen, :last_seen]
-  defstruct [:id, :name, :kind, :relevance, :observations, :first_seen, :last_seen, :summary]
+  defstruct [
+    :id,
+    :name,
+    :kind,
+    :relevance,
+    :observations,
+    :first_seen,
+    :last_seen,
+    :summary,
+    pinned: false
+  ]
 
   @type t :: %__MODULE__{
           id: String.t(),
@@ -19,7 +29,8 @@ defmodule Kerto.Graph.Node do
           observations: non_neg_integer(),
           first_seen: String.t(),
           last_seen: String.t(),
-          summary: String.t() | nil
+          summary: String.t() | nil,
+          pinned: boolean()
         }
 
   @node_death_threshold 0.01

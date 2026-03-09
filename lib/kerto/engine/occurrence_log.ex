@@ -34,6 +34,11 @@ defmodule Kerto.Engine.OccurrenceLog do
     GenServer.call(server, :count)
   end
 
+  @spec clear(GenServer.server()) :: :ok
+  def clear(server \\ __MODULE__) do
+    GenServer.call(server, :clear)
+  end
+
   # --- Server Callbacks ---
 
   @impl true
@@ -76,5 +81,10 @@ defmodule Kerto.Engine.OccurrenceLog do
 
   def handle_call(:count, _from, state) do
     {:reply, :ets.info(state.table, :size), state}
+  end
+
+  def handle_call(:clear, _from, state) do
+    :ets.delete_all_objects(state.table)
+    {:reply, :ok, state}
   end
 end

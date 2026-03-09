@@ -29,6 +29,8 @@ defmodule Kerto.Interface.Command.Bootstrap do
         end
 
       node_count > 10 ->
+        current_fp = git_root_commit()
+        maybe_save_fingerprint(persistence_path, current_fp)
         Response.success("bootstrap skipped (graph already populated)")
 
       true ->

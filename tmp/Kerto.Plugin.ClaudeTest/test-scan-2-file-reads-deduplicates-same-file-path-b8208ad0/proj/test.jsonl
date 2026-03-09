@@ -1,0 +1,4 @@
+{"message":{"content":[{"id":"t1","input":{"file_path":"/app/lib/auth.ex"},"name":"Read","type":"tool_use"}],"role":"assistant"},"timestamp":"2026-03-08T23:34:23.125084Z","type":"assistant"}
+{"message":{"content":[{"content":"ok","is_error":false,"tool_use_id":"t1","type":"tool_result"}],"role":"user"},"timestamp":"2026-03-08T23:34:23.125090Z","type":"user"}
+{"message":{"content":[{"id":"t2","input":{"file_path":"/app/lib/auth.ex"},"name":"Read","type":"tool_use"}],"role":"assistant"},"timestamp":"2026-03-08T23:34:23.125091Z","type":"assistant"}
+{"message":{"content":[{"content":"ok","is_error":false,"tool_use_id":"t2","type":"tool_result"}],"role":"user"},"timestamp":"2026-03-08T23:34:23.125092Z","type":"user"}

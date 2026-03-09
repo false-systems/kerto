@@ -1,0 +1,2 @@
+{"message":{"content":[{"id":"t1","input":{"command":"make test"},"name":"Bash","type":"tool_use"}],"role":"assistant"},"timestamp":"2026-03-08T23:34:23.133144Z","type":"assistant"}
+{"message":{"content":[{"content":"Exit code 1\ncompilation failed","is_error":true,"tool_use_id":"t1","type":"tool_result"}],"role":"user"},"timestamp":"2026-03-08T23:34:23.133149Z","type":"user"}

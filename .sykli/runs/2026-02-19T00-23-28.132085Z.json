@@ -1,0 +1,53 @@
+{
+  "id": "4800f968fccb67b1",
+  "timestamp": "2026-02-19T00:23:28.132085Z",
+  "tasks": [
+    {
+      "name": "deps",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 853,
+      "streak": 14,
+      "inputs": [
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    {
+      "name": "format",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 430,
+      "streak": 13,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    },
+    {
+      "name": "compile",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 334,
+      "streak": 13,
+      "inputs": [
+        "**/*.ex",
+        "mix.exs"
+      ]
+    },
+    {
+      "name": "test",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 856,
+      "streak": 13,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    }
+  ],
+  "overall": "passed",
+  "git_ref": "073fa1a",
+  "git_branch": "feat/interface-level4"
+}

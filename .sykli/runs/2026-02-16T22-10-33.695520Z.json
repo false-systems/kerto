@@ -1,0 +1,56 @@
+{
+  "id": "6329711d887b3eaa",
+  "timestamp": "2026-02-16T22:10:33.695520Z",
+  "tasks": [
+    {
+      "name": "deps",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 588,
+      "streak": 1,
+      "inputs": [
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    {
+      "error": "%Sykli.Error{code: \"task_failed\", type: :execution, message: \"task 'format' failed\", task: \"format\", step: :run, command: \"mix format --check-formatted\", output: \"uce(1..100, graph, fn _, g -> Graph.decay_all(g, 0.8) end)\\n         |\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/lib/kerto/graph/ewma.ex\\n\\e[0m\\n       |\\n16 16  |  @spec update(float(), float()) :: float()\\n17 17  |  def update(current, observation)\\n18    -|      when is_float(current) and is_float(observation)\\n19    -|      and current >= 0.0 and current <= 1.0\\n20    -|      and observation >= 0.0 and observation <= 1.0 do\\n   18 +|      when is_float(current) and is_float(observation) and\\n   19 +|             current >= 0.0 and current <= 1.0 and\\n   20 +|             observation >= 0.0 and observation <= 1.0 do\\n21 21  |    @alpha * observation + (1.0 - @alpha) * current\\n22 22  |  end\\n       |\\n27 27  |  @spec decay(float(), float()) :: float()\\n28 28  |  def decay(weight, factor \\\\\\\\ @decay_factor)\\n29    -|      when is_float(weight) and is_float(factor)\\n30    -|      and weight >= 0.0 and weight <= 1.0\\n31    -|      and factor >= 0.0 and factor <= 1.0 do\\n   29 +|      when is_float(weight) and is_float(factor) and\\n   30 +|             weight >= 0.0 and weight <= 1.0 and\\n   31 +|             factor >= 0.0 and factor <= 1.0 do\\n32 32  |    weight * factor\\n33 33  |  end\\n       |\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/lib/kerto/graph/relationship.ex\\n\\e[0m\\n       |\\n10 10  |  alias Kerto.Graph.{EWMA, RelationType}\\n11 11  |\\n12    -|  @enforce_keys [:source, :target, :relation, :weight, :observations, :first_seen, :last_seen, :evidence]\\n13    -|  defstruct [:source, :target, :relation, :weight, :observations, :first_seen, :last_seen, :evidence]\\n   12 +|  @enforce_keys [\\n   13 +|    :source,\\n   14 +|    :target,\\n   15 +|    :relation,\\n   16 +|    :weight,\\n   17 +|    :observations,\\n   18 +|    :first_seen,\\n   19 +|    :last_seen,\\n   20 +|    :evidence\\n   21 +|  ]\\n   22 +|  defstruct [\\n   23 +|    :source,\\n   24 +|    :target,\\n   25 +|    :relation,\\n   26 +|    :weight,\\n   27 +|    :observations,\\n   28 +|    :first_seen,\\n   29 +|    :last_seen,\\n   30 +|    :evidence\\n   31 +|  ]\\n14 32  |\\n15 33  |  @type t :: %__MODULE__{\\n       |\\n46 64  |  def reinforce(%__MODULE__{} = rel, confidence, ulid, evidence_text)\\n47 65  |      when is_float(confidence) and is_binary(ulid) and is_binary(evidence_text) do\\n48    -|    %{rel |\\n49    -|      weight: EWMA.update(rel.weight, confidence),\\n50    -|      observations: rel.observations + 1,\\n51    -|      last_seen: ulid,\\n52    -|      evidence: rel.evidence ++ [evidence_text]\\n   66 +|    %{\\n   67 +|      rel\\n   68 +|      | weight: EWMA.update(rel.weight, confidence),\\n   69 +|        observations: rel.observations + 1,\\n   70 +|        last_seen: ulid,\\n   71 +|        evidence: rel.evidence ++ [evidence_text]\\n53 72  |    }\\n54 73  |  end\\n       |\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/lib/kerto/graph/node.ex\\n\\e[0m\\n       |\\n46 46  |  def observe(%__MODULE__{} = node, confidence, ulid)\\n47 47  |      when is_float(confidence) and is_binary(ulid) do\\n48    -|    %{node |\\n49    -|      relevance: EWMA.update(node.relevance, confidence),\\n50    -|      observations: node.observations + 1,\\n51    -|      last_seen: ulid\\n   48 +|    %{\\n   49 +|      node\\n   50 +|      | relevance: EWMA.update(node.relevance, confidence),\\n   51 +|        observations: node.observations + 1,\\n   52 +|        last_seen: ulid\\n52 53  |    }\\n53 54  |  end\\n       |\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/lib/kerto/graph/graph.ex\\n\\e[0m\\n         |\\n 44  44  |  @spec upsert_relationship(t(), String.t(), atom(), String.t(), float(), String.t(), String.t()) ::\\n 45  45  |          {t(), Relationship.t()}\\n 46     -|  def upsert_relationship(%__MODULE__{} = graph, source_id, relation, target_id, confidence, ulid, evidence_text) do\\n     46 +|  def upsert_relationship(\\n     47 +|        %__MODULE__{} = graph,\\n     48 +|        source_id,\\n     49 +|        relation,\\n     50 +|        target_id,\\n     51 +|        confidence,\\n     52 +|        ulid,\\n     53 +|        evidence_text\\n     54 +|      ) do\\n 47  55  |    key = {source_id, relation, target_id}\\n 48  56  |\\n         |\\n\\n\\n\\n\", exit_code: 1, duration_ms: 294, cause: nil, hints: [], notes: [\"task ran for 294ms before failing\"]}",
+      "name": "format",
+      "status": "failed",
+      "cached": false,
+      "duration_ms": 359,
+      "streak": 0,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    },
+    {
+      "error": ":dependency_failed",
+      "name": "compile",
+      "status": "skipped",
+      "cached": false,
+      "duration_ms": 0,
+      "streak": 0,
+      "inputs": [
+        "**/*.ex",
+        "mix.exs"
+      ]
+    },
+    {
+      "error": ":dependency_failed",
+      "name": "test",
+      "status": "skipped",
+      "cached": false,
+      "duration_ms": 0,
+      "streak": 0,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    }
+  ],
+  "overall": "failed",
+  "git_ref": "e068b5e",
+  "git_branch": "main"
+}

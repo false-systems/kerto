@@ -141,6 +141,108 @@ defmodule Kerto.Interface.Help do
       flags: [],
       examples: ["kerto stop"]
     },
+    "forget" => %{
+      description: "Remove a node or relationship from the graph",
+      usage: "kerto forget --node <name> [--kind <kind>]",
+      flags: [
+        {"--node <name>", "Node name to forget"},
+        {"--kind <kind>", "Node kind (default: file)"},
+        {"--source <name>", "Source name (for relationship forget)"},
+        {"--relation <rel>", "Relationship type (for relationship forget)"},
+        {"--target <name>", "Target name (for relationship forget)"},
+        {"--source-kind <kind>", "Source kind (default: file)"},
+        {"--target-kind <kind>", "Target kind (default: file)"}
+      ],
+      examples: [
+        "kerto forget --node auth.go",
+        "kerto forget --source auth.go --relation breaks --target test"
+      ]
+    },
+    "pin" => %{
+      description: "Pin a node or relationship so it never decays or gets pruned",
+      usage: "kerto pin --node <name> [--kind <kind>]",
+      flags: [
+        {"--node <name>", "Node name to pin"},
+        {"--kind <kind>", "Node kind (default: file)"},
+        {"--source <name>", "Source name (for relationship pin)"},
+        {"--relation <rel>", "Relationship type (for relationship pin)"},
+        {"--target <name>", "Target name (for relationship pin)"},
+        {"--source-kind <kind>", "Source kind (default: file)"},
+        {"--target-kind <kind>", "Target kind (default: file)"}
+      ],
+      examples: [
+        "kerto pin --node auth.go",
+        "kerto pin --source auth.go --relation depends_on --target session.go"
+      ]
+    },
+    "unpin" => %{
+      description: "Unpin a node or relationship, allowing normal decay",
+      usage: "kerto unpin --node <name> [--kind <kind>]",
+      flags: [
+        {"--node <name>", "Node name to unpin"},
+        {"--kind <kind>", "Node kind (default: file)"},
+        {"--source <name>", "Source name (for relationship unpin)"},
+        {"--relation <rel>", "Relationship type (for relationship unpin)"},
+        {"--target <name>", "Target name (for relationship unpin)"},
+        {"--source-kind <kind>", "Source kind (default: file)"},
+        {"--target-kind <kind>", "Target kind (default: file)"}
+      ],
+      examples: [
+        "kerto unpin --node auth.go"
+      ]
+    },
+    "list" => %{
+      description: "List nodes or relationships with optional filters",
+      usage: "kerto list [--type nodes|relationships] [flags]",
+      flags: [
+        {"--type <type>", "What to list: nodes or relationships (default: nodes)"},
+        {"--kind <kind>", "Filter by node kind (nodes only)"},
+        {"--pinned", "Show only pinned entities"},
+        {"--below <f>", "Show entities with relevance/weight below threshold"},
+        {"--relation <rel>", "Filter by relation type (relationships only)"}
+      ],
+      examples: [
+        "kerto list",
+        "kerto list --pinned",
+        "kerto list --kind file --below 0.3",
+        "kerto list --type relationships --relation breaks"
+      ]
+    },
+    "team" => %{
+      description: "Manage team PKI (CA, certificates, membership)",
+      usage: "kerto team --action <action> [flags]",
+      flags: [
+        {"--action <action>", "init, join, sign, or list"},
+        {"--name <name>", "Team or node name"},
+        {"--csr <path>", "Path to CSR file (for sign action)"}
+      ],
+      examples: [
+        "kerto team --action init --name my-team",
+        "kerto team --action join --name dev-a",
+        "kerto team --action sign --csr peer.csr",
+        "kerto team --action list"
+      ]
+    },
+    "mesh" => %{
+      description: "Manage mesh network (peers, connections)",
+      usage: "kerto mesh --action <action> [flags]",
+      flags: [
+        {"--action <action>", "status, connect, add-peer, or remove-peer"},
+        {"--peer <node@host>", "Peer node name"}
+      ],
+      examples: [
+        "kerto mesh --action status",
+        "kerto mesh --action add-peer --peer kerto@dev-b.local",
+        "kerto mesh --action connect --peer kerto@dev-b.local",
+        "kerto mesh --action remove-peer --peer kerto@dev-b.local"
+      ]
+    },
+    "scan" => %{
+      description: "Manually trigger a plugin scan cycle",
+      usage: "kerto scan",
+      flags: [],
+      examples: ["kerto scan"]
+    },
     "mcp" => %{
       description: "Start MCP server (JSON-RPC over stdio, used by Claude Code)",
       usage: "kerto mcp",
