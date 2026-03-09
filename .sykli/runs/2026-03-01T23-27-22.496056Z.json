@@ -1,0 +1,72 @@
+{
+  "id": "2edc978c02616356",
+  "timestamp": "2026-03-01T23:27:22.496056Z",
+  "tasks": [
+    {
+      "name": "deps",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 667,
+      "streak": 31,
+      "inputs": [
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    {
+      "error": "%Sykli.Error{code: \"task_failed\", type: :execution, message: \"task 'format' failed\", task: \"format\", step: :run, command: \"mix format --check-formatted\", output: \"** (Mix) mix format failed due to --check-formatted.\\nThe following files are not formatted:\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/test/engine/decay_test.exs\\n\\e[0m\\n       |\\n33 33  |    end\\n34 34  |  end\\n35    -|\\n36 35  |end\\n37 36  |\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/test/rendering/hint_renderer_test.exs\\n\\e[0m\\n         |\\n 66  66  |    test \\\"coupling relation produces hint line\\\" do\\n 67  67  |      other = make_node(:file, \\\"store.ex\\\")\\n 68     -|      rel = make_rel(:file, \\\"engine.ex\\\", :often_changes_with, :file, \\\"store.ex\\\", weight: 0.6, observations: 5)\\n     68 +|\\n     69 +|      rel =\\n     70 +|        make_rel(:file, \\\"engine.ex\\\", :often_changes_with, :file, \\\"store.ex\\\",\\n     71 +|          weight: 0.6,\\n     72 +|          observations: 5\\n     73 +|        )\\n     74 +|\\n 69  75  |      ctx = make_context(:file, \\\"engine.ex\\\", [rel], [other])\\n 70  76  |\\n         |\\n119 125  |      target2 = make_node(:file, \\\"store.ex\\\")\\n120 126  |\\n121     -|      caution_rel = make_rel(:file, \\\"auth.ex\\\", :breaks, :file, \\\"deploy.sh\\\", weight: 0.5, observations: 1)\\n122     -|      coupling_rel = make_rel(:file, \\\"auth.ex\\\", :often_changes_with, :file, \\\"store.ex\\\", weight: 0.9, observations: 10)\\n    127 +|      caution_rel =\\n    128 +|        make_rel(:file, \\\"auth.ex\\\", :breaks, :file, \\\"deploy.sh\\\", weight: 0.5, observations: 1)\\n123 129  |\\n    130 +|      coupling_rel =\\n    131 +|        make_rel(:file, \\\"auth.ex\\\", :often_changes_with, :file, \\\"store.ex\\\",\\n    132 +|          weight: 0.9,\\n    133 +|          observations: 10\\n    134 +|        )\\n    135 +|\\n124 136  |      ctx = make_context(:file, \\\"auth.ex\\\", [coupling_rel, caution_rel], [target1, target2])\\n125 137  |\\n         |\\n\\n\\n\\n\", exit_code: 1, duration_ms: 283, cause: nil, hints: [], notes: [\"task ran for 283ms before failing\"]}",
+      "name": "format",
+      "status": "failed",
+      "cached": false,
+      "duration_ms": 343,
+      "streak": 0,
+      "likely_cause": [
+        "lib/kerto/engine/decay.ex",
+        "lib/kerto/engine/engine.ex",
+        "lib/kerto/engine/occurrence_log.ex",
+        "lib/kerto/engine/persistence.ex",
+        "lib/kerto/ingestion/extraction.ex",
+        "lib/kerto/interface/context_writer.ex",
+        "lib/kerto/interface/daemon.ex",
+        "lib/kerto/interface/dispatcher.ex",
+        "lib/kerto/interface/help.ex",
+        "lib/kerto/interface/parser.ex",
+        "lib/kerto/rendering/hint_renderer.ex",
+        "test/engine/decay_test.exs",
+        "test/engine/occurrence_log_test.exs",
+        "test/rendering/hint_renderer_test.exs"
+      ],
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    },
+    {
+      "error": ":dependency_failed",
+      "name": "compile",
+      "status": "skipped",
+      "cached": false,
+      "duration_ms": 0,
+      "streak": 29,
+      "inputs": [
+        "**/*.ex",
+        "mix.exs"
+      ]
+    },
+    {
+      "error": ":dependency_failed",
+      "name": "test",
+      "status": "skipped",
+      "cached": false,
+      "duration_ms": 0,
+      "streak": 29,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    }
+  ],
+  "overall": "failed",
+  "git_ref": "ce03536",
+  "git_branch": "main"
+}

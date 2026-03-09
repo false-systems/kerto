@@ -1,0 +1,95 @@
+{
+  "coverage": {
+    "file_to_tasks": {},
+    "uncovered_patterns": []
+  },
+  "generated_at": "2026-03-08T14:16:22.976306Z",
+  "last_run": {
+    "duration_ms": 5499,
+    "outcome": "success",
+    "tasks": [
+      {
+        "cached": false,
+        "duration_ms": 743,
+        "name": "deps",
+        "status": "passed"
+      },
+      {
+        "cached": false,
+        "duration_ms": 449,
+        "name": "format",
+        "status": "passed"
+      },
+      {
+        "cached": false,
+        "duration_ms": 358,
+        "name": "compile",
+        "status": "passed"
+      },
+      {
+        "cached": false,
+        "duration_ms": 3949,
+        "name": "test",
+        "status": "passed"
+      }
+    ],
+    "timestamp": "2026-03-08T14:16:22.930011Z"
+  },
+  "pipeline": {
+    "critical_tasks": [],
+    "dependencies": {
+      "compile": [
+        "deps"
+      ],
+      "deps": [],
+      "format": [],
+      "test": [
+        "compile"
+      ]
+    },
+    "task_count": 4,
+    "tasks": [
+      {
+        "command": "mix compile --warnings-as-errors",
+        "depends_on": [
+          "deps"
+        ],
+        "inputs": [
+          "**/*.ex",
+          "mix.exs"
+        ],
+        "name": "compile"
+      },
+      {
+        "command": "mix deps.get",
+        "depends_on": [],
+        "inputs": [
+          "mix.exs",
+          "mix.lock"
+        ],
+        "name": "deps"
+      },
+      {
+        "command": "mix format --check-formatted",
+        "depends_on": [],
+        "inputs": [
+          "**/*.ex",
+          "**/*.exs"
+        ],
+        "name": "format"
+      },
+      {
+        "command": "mix test",
+        "depends_on": [
+          "compile"
+        ],
+        "inputs": [
+          "**/*.ex",
+          "**/*.exs"
+        ],
+        "name": "test"
+      }
+    ]
+  },
+  "version": "1.0"
+}

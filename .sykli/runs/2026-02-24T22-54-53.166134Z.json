@@ -1,0 +1,53 @@
+{
+  "id": "a78db904dceb73d8",
+  "timestamp": "2026-02-24T22:54:53.166134Z",
+  "tasks": [
+    {
+      "name": "deps",
+      "status": "passed",
+      "cached": true,
+      "duration_ms": 18,
+      "streak": 25,
+      "inputs": [
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    {
+      "name": "format",
+      "status": "passed",
+      "cached": true,
+      "duration_ms": 64,
+      "streak": 24,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    },
+    {
+      "name": "compile",
+      "status": "passed",
+      "cached": true,
+      "duration_ms": 16,
+      "streak": 24,
+      "inputs": [
+        "**/*.ex",
+        "mix.exs"
+      ]
+    },
+    {
+      "name": "test",
+      "status": "passed",
+      "cached": true,
+      "duration_ms": 14,
+      "streak": 24,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    }
+  ],
+  "overall": "passed",
+  "git_ref": "90ff0d1",
+  "git_branch": "feat/smart-context-multi-agent"
+}

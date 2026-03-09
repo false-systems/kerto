@@ -89,6 +89,7 @@ defmodule Kerto.Engine do
 
   @spec clear(atom()) :: :ok
   def clear(engine \\ __MODULE__) do
+    OccurrenceLog.clear(child_name(engine, :log))
     Store.clear(child_name(engine, :store))
   end
 

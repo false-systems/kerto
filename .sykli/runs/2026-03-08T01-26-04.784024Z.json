@@ -1,0 +1,53 @@
+{
+  "id": "0eb84b1e2757e07f",
+  "timestamp": "2026-03-08T01:26:04.784024Z",
+  "tasks": [
+    {
+      "name": "deps",
+      "status": "passed",
+      "cached": true,
+      "duration_ms": 19,
+      "streak": 41,
+      "inputs": [
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    {
+      "name": "format",
+      "status": "passed",
+      "cached": true,
+      "duration_ms": 82,
+      "streak": 4,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    },
+    {
+      "name": "compile",
+      "status": "passed",
+      "cached": true,
+      "duration_ms": 10,
+      "streak": 37,
+      "inputs": [
+        "**/*.ex",
+        "mix.exs"
+      ]
+    },
+    {
+      "name": "test",
+      "status": "passed",
+      "cached": true,
+      "duration_ms": 21,
+      "streak": 37,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    }
+  ],
+  "overall": "passed",
+  "git_ref": "64b5d64",
+  "git_branch": "feat/configurable-plugins"
+}

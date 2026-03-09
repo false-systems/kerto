@@ -1,0 +1,66 @@
+{
+  "id": "e6e731031216780b",
+  "timestamp": "2026-03-03T23:58:37.104723Z",
+  "tasks": [
+    {
+      "name": "deps",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 589,
+      "streak": 37,
+      "inputs": [
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    {
+      "error": "%Sykli.Error{code: \"task_failed\", type: :execution, message: \"task 'format' failed\", task: \"format\", step: :run, command: \"mix format --check-formatted\", output: \"** (Mix) mix format failed due to --check-formatted.\\nThe following files are not formatted:\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/lib/kerto/interface/command/bootstrap.ex\\n\\e[0m\\n         |\\n 41  41  |  defp maybe_save_fingerprint(nil, _fingerprint), do: :ok\\n 42  42  |  defp maybe_save_fingerprint(_path, nil), do: :ok\\n 43     -|  defp maybe_save_fingerprint(path, fingerprint), do: Persistence.save_fingerprint(path, fingerprint)\\n 44  43  |\\n     44 +|  defp maybe_save_fingerprint(path, fingerprint),\\n     45 +|    do: Persistence.save_fingerprint(path, fingerprint)\\n     46 +|\\n 45  47  |  defp git_root_commit do\\n 46  48  |    case System.cmd(\\\"git\\\", [\\\"rev-list\\\", \\\"--max-parents=0\\\", \\\"HEAD\\\"], stderr_to_stdout: true) do\\n         |\\n\\n\\e[1m\\e[31m/Users/yair/projects/kerto/test/interface/command/bootstrap_test.exs\\n\\e[0m\\n       |\\n12 12  |    start_supervised!(\\n13 13  |      {Kerto.Engine,\\n14    -|       name: :test_bootstrap_engine,\\n15    -|       persistence_path: tmp,\\n16    -|       decay_interval_ms: :timer.hours(1)}\\n   14 +|       name: :test_bootstrap_engine, persistence_path: tmp, decay_interval_ms: :timer.hours(1)}\\n17 15  |    )\\n18 16  |\\n       |\\n\\n\\n\\n\", exit_code: 1, duration_ms: 297, cause: nil, hints: [], notes: [\"task ran for 297ms before failing\"]}",
+      "name": "format",
+      "status": "failed",
+      "cached": false,
+      "duration_ms": 375,
+      "streak": 0,
+      "likely_cause": [
+        "lib/kerto/engine/engine.ex",
+        "lib/kerto/engine/persistence.ex",
+        "lib/kerto/engine/store.ex",
+        "lib/kerto/interface/command/bootstrap.ex",
+        "lib/kerto/mesh/peer.ex",
+        "test/engine/persistence_test.exs",
+        "test/interface/command/bootstrap_test.exs",
+        "test/mesh/peer_test.exs"
+      ],
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    },
+    {
+      "error": ":dependency_failed",
+      "name": "compile",
+      "status": "skipped",
+      "cached": false,
+      "duration_ms": 0,
+      "streak": 33,
+      "inputs": [
+        "**/*.ex",
+        "mix.exs"
+      ]
+    },
+    {
+      "error": ":dependency_failed",
+      "name": "test",
+      "status": "skipped",
+      "cached": false,
+      "duration_ms": 0,
+      "streak": 33,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    }
+  ],
+  "overall": "failed",
+  "git_ref": "2b445e7",
+  "git_branch": "main"
+}

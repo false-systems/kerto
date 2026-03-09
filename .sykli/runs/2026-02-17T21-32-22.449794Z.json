@@ -1,0 +1,53 @@
+{
+  "id": "157c04cda75c29cd",
+  "timestamp": "2026-02-17T21:32:22.449794Z",
+  "tasks": [
+    {
+      "name": "deps",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 1009,
+      "streak": 5,
+      "inputs": [
+        "mix.exs",
+        "mix.lock"
+      ]
+    },
+    {
+      "name": "format",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 801,
+      "streak": 4,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    },
+    {
+      "name": "compile",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 321,
+      "streak": 4,
+      "inputs": [
+        "**/*.ex",
+        "mix.exs"
+      ]
+    },
+    {
+      "name": "test",
+      "status": "passed",
+      "cached": false,
+      "duration_ms": 518,
+      "streak": 4,
+      "inputs": [
+        "**/*.ex",
+        "**/*.exs"
+      ]
+    }
+  ],
+  "overall": "passed",
+  "git_ref": "708e218",
+  "git_branch": "main"
+}
