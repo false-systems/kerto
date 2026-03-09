@@ -66,9 +66,17 @@ Commands never do IO. They receive an engine atom + args map, return `Response.t
 
 MCP tools are defined in `Interface.MCP` — each maps to a command: `kerto_context` → `Command.Context`, `kerto_learn` → `Command.Learn`, etc.
 
+Commands include: `init`, `start`, `stop`, `status`, `context`, `learn`, `decide`, `observe`, `ingest`, `graph`, `hint`, `bootstrap`, `scan`, `forget`, `pin`, `unpin`, `list`, `mesh`, `team`.
+
 ## Plugin System
 
 Plugins implement the `Kerto.Plugin` behaviour (`agent_name/0`, `scan/1`). Configured per-project via `.kerto/plugins.exs` (gitignored, local config). See `.kerto/plugins.exs.example`. The `Engine.PluginRunner` GenServer calls each plugin's `scan/1` periodically and on `kerto scan`.
+
+## Key Invariants
+
+- **Content-addressed identity** — `Identity.compute_id(kind, name)` is BLAKE2b of kind+name. Same file = same node ID everywhere. Enables idempotent merging and distributed consistency.
+- **EWMA confidence** — weights are exponential weighted moving average (alpha 0.3). Reinforcement pulls toward observation, decay multiplies by 0.95 every 6h. Death thresholds: relationships < 0.05, nodes < 0.01 with no relationships.
+- **Pinned entities** — `pinned: true` on Node/Relationship exempts from decay and pruning. Set via `kerto pin`, cleared via `kerto unpin`.
 
 ## Key Domain Concepts
 
@@ -76,9 +84,9 @@ Plugins implement the `Kerto.Plugin` behaviour (`agent_name/0`, `scan/1`). Confi
 |---------|--------|-------------|
 | EWMA | `Kerto.Graph.EWMA` | Weight math: update, decay, death check |
 | Identity | `Kerto.Graph.Identity` | Content-addressed ID (BLAKE2b) |
-| Node | `Kerto.Graph.Node` | Knowledge entity with relevance decay |
-| Relationship | `Kerto.Graph.Relationship` | Weighted edge with evidence list |
-| Graph | `Kerto.Graph.Graph` | Upsert, query, subgraph BFS, decay_all, prune |
+| Node | `Kerto.Graph.Node` | Knowledge entity with relevance decay, pinning |
+| Relationship | `Kerto.Graph.Relationship` | Weighted edge with evidence list, pinning |
+| Graph | `Kerto.Graph.Graph` | Upsert, query, remove, pin/unpin, subgraph BFS, decay_all, prune |
 | NodeKind | `Kerto.Graph.NodeKind` | :file, :module, :pattern, :decision, :error, :concept |
 | RelationType | `Kerto.Graph.RelationType` | :breaks, :caused_by, :triggers, :deployed_to, etc. |
 | Extraction | `Kerto.Ingestion.Extraction` | Occurrence → ExtractionOps dispatcher |
@@ -86,6 +94,8 @@ Plugins implement the `Kerto.Plugin` behaviour (`agent_name/0`, `scan/1`). Confi
 | Mesh.Identity | `Kerto.Mesh.Identity` | ECDSA P-256 keypairs, PEM, fingerprinting |
 | Mesh.Authority | `Kerto.Mesh.Authority` | Team CA: init, sign CSR, verify certs |
 | Mesh.Sync | `Kerto.Mesh.Sync` | Occurrence-based sync protocol, ULID sync points |
+| Mesh.Discovery | `Kerto.Mesh.Discovery` | mDNS + explicit peer management |
+| Plugin | `Kerto.Plugin` | Behaviour for agent log readers (Claude, Logs) |
 
 ## Code Rules
 
