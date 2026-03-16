@@ -9,7 +9,7 @@ defmodule Kerto.Engine.SessionRegistry do
 
   use GenServer
 
-  alias Kerto.Interface.ULID
+  alias Kerto.Graph.ULID
 
   def start_link(opts) do
     name = Keyword.get(opts, :name, __MODULE__)

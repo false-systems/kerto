@@ -11,7 +11,7 @@ defmodule Kerto.Engine.PluginRunner do
 
   require Logger
 
-  alias Kerto.Interface.ULID
+  alias Kerto.Graph.ULID
 
   @default_interval_ms :timer.minutes(5)
 
