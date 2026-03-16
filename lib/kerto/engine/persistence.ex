@@ -66,6 +66,11 @@ defmodule Kerto.Engine.Persistence do
     end
   end
 
+  # Trust boundary: :safe is intentionally omitted because the graph contains
+  # module atoms (Kerto.Graph.*) created at compile time. Using :safe would
+  # reject any ETF referencing these atoms if they weren't already in the
+  # atom table (e.g. after a code change). The file is local, written only
+  # by our own save/2 — external/network ETF must never reach this path.
   defp safe_binary_to_term(binary) do
     :erlang.binary_to_term(binary)
   rescue
