@@ -16,7 +16,7 @@ defmodule Kerto.Plugin.Claude do
   @behaviour Kerto.Plugin
 
   alias Kerto.Ingestion.{Occurrence, Source}
-  alias Kerto.Interface.ULID
+  alias Kerto.Graph.ULID
 
   @file_tools ~w(Read Edit Write)
   @projects_dir "~/.claude/projects"

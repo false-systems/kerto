@@ -14,9 +14,24 @@ defmodule Kerto.Graph.NodeTest do
       assert node.kind == :file
     end
 
-    test "sets initial relevance to 0.5" do
+    test "sets initial relevance to 0.5 by default" do
       node = Node.new(:file, "auth.go", "01JABC")
       assert node.relevance == 0.5
+    end
+
+    test "respects confidence on first insertion" do
+      node = Node.new(:file, "auth.go", "01JABC", 0.9)
+      assert node.relevance == 0.9
+    end
+
+    test "rejects confidence outside [0.0, 1.0]" do
+      assert_raise FunctionClauseError, fn ->
+        Node.new(:file, "auth.go", "01JABC", 1.5)
+      end
+
+      assert_raise FunctionClauseError, fn ->
+        Node.new(:file, "auth.go", "01JABC", -0.1)
+      end
     end
 
     test "sets observations to 1" do

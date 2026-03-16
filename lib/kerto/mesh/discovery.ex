@@ -19,7 +19,7 @@ defmodule Kerto.Mesh.Discovery do
 
   require Logger
 
-  alias Kerto.Mesh.PeerSupervisor
+  alias Kerto.Mesh.{PeerNaming, PeerSupervisor}
 
   @default_poll_interval_ms :timer.seconds(30)
 
@@ -81,8 +81,11 @@ defmodule Kerto.Mesh.Discovery do
   def handle_call({:remove_peer, peer_node}, _from, state) do
     state = %{state | peers: MapSet.delete(state.peers, peer_node)}
     # Stop the peer process if running
-    peer_name = peer_process_name(peer_node)
-    PeerSupervisor.stop_peer(state.peer_supervisor, peer_name)
+    case peer_process_name(peer_node) do
+      nil -> :ok
+      peer_name -> PeerSupervisor.stop_peer(state.peer_supervisor, peer_name)
+    end
+
     {:reply, :ok, state}
   end
 
@@ -101,23 +104,26 @@ defmodule Kerto.Mesh.Discovery do
 
   defp ensure_peers_connected(state) do
     Enum.each(state.peers, fn peer_node ->
-      peer_name = peer_process_name(peer_node)
+      with {:ok, peer_name} <- PeerNaming.process_name(peer_node),
+           nil <- GenServer.whereis(peer_name),
+           {:ok, peer_ref} <- PeerNaming.peer_ref(peer_node) do
+        peer_opts = [
+          name: peer_name,
+          peer_node: peer_node,
+          engine: state.engine,
+          peer_ref: peer_ref
+        ]
 
-      case GenServer.whereis(peer_name) do
-        nil ->
-          peer_opts = [
-            name: peer_name,
-            peer_node: peer_node,
-            engine: state.engine
-          ]
+        case PeerSupervisor.start_peer(state.peer_supervisor, peer_opts) do
+          {:ok, _pid} ->
+            Logger.info("Discovery: started peer process for #{peer_node}")
 
-          case PeerSupervisor.start_peer(state.peer_supervisor, peer_opts) do
-            {:ok, _pid} ->
-              Logger.info("Discovery: started peer process for #{peer_node}")
-
-            {:error, reason} ->
-              Logger.error("Discovery: failed to start peer for #{peer_node}: #{inspect(reason)}")
-          end
+          {:error, reason} ->
+            Logger.error("Discovery: failed to start peer for #{peer_node}: #{inspect(reason)}")
+        end
+      else
+        {:error, :invalid_peer_node} ->
+          Logger.warning("Discovery: invalid peer node format: #{peer_node}")
 
         _pid ->
           :ok
@@ -126,7 +132,10 @@ defmodule Kerto.Mesh.Discovery do
   end
 
   defp peer_process_name(peer_node) do
-    :"kerto.peer.#{peer_node}"
+    case PeerNaming.process_name(peer_node) do
+      {:ok, name} -> name
+      {:error, :invalid_peer_node} -> nil
+    end
   end
 
   defp schedule_poll(interval) do

@@ -11,6 +11,12 @@ defmodule Kerto.Mesh.PeerTest do
   end
 
   setup do
+    # Ensure :pg is running for peer group notifications
+    case :pg.start(:pg) do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
+
     engine =
       start_supervised!({Engine, name: :peer_test_engine, decay_interval_ms: :timer.hours(1)})
 
@@ -410,6 +416,25 @@ defmodule Kerto.Mesh.PeerTest do
 
       send(peer, {:nodedown, :"kerto@dev-c"})
       assert %{status: :handshake} = Peer.status(peer)
+    end
+  end
+
+  describe ":pg group membership" do
+    test "peer joins :pg group on start and leaves on stop" do
+      peer =
+        start_supervised!(
+          {Peer,
+           name: :peer_pg, peer_node: "kerto@dev-b", engine: :peer_test_engine, peer_ref: self()},
+          id: :peer_pg
+        )
+
+      group = {:kerto_peers, :peer_test_engine}
+      members = :pg.get_members(group)
+      assert peer in members
+
+      stop_supervised!(:peer_pg)
+      members_after = :pg.get_members(group)
+      refute peer in members_after
     end
   end
 

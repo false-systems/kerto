@@ -10,6 +10,7 @@ defmodule Kerto.Interface.Command.Mesh do
   """
 
   alias Kerto.Interface.Response
+  alias Kerto.Mesh.PeerNaming
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, args) do
@@ -50,22 +51,28 @@ defmodule Kerto.Interface.Command.Mesh do
     if is_nil(peer_node) do
       Response.error("specify --peer <node@host>")
     else
-      peer_supervisor = peer_supervisor_name(engine)
+      with {:ok, peer_name} <- PeerNaming.process_name(peer_node),
+           {:ok, peer_ref} <- PeerNaming.peer_ref(peer_node) do
+        peer_supervisor = peer_supervisor_name(engine)
 
-      peer_opts = [
-        name: :"kerto.peer.#{peer_node}",
-        peer_node: peer_node,
-        engine: engine,
-        peer_ref: {Kerto.Mesh.Peer, String.to_atom(peer_node)}
-      ]
+        peer_opts = [
+          name: peer_name,
+          peer_node: peer_node,
+          engine: engine,
+          peer_ref: peer_ref
+        ]
 
-      case Kerto.Mesh.PeerSupervisor.start_peer(peer_supervisor, peer_opts) do
-        {:ok, _pid} ->
-          Kerto.Mesh.Peer.connect(:"kerto.peer.#{peer_node}")
-          Response.success("connecting to #{peer_node}")
+        case Kerto.Mesh.PeerSupervisor.start_peer(peer_supervisor, peer_opts) do
+          {:ok, _pid} ->
+            Kerto.Mesh.Peer.connect(peer_name)
+            Response.success("connecting to #{peer_node}")
 
-        {:error, reason} ->
-          Response.error("failed to start peer: #{inspect(reason)}")
+          {:error, reason} ->
+            Response.error("failed to start peer: #{inspect(reason)}")
+        end
+      else
+        {:error, :invalid_peer_node} ->
+          Response.error("invalid peer node format: #{peer_node} (expected name@host)")
       end
     end
   end

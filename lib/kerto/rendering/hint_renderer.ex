@@ -7,6 +7,7 @@ defmodule Kerto.Rendering.HintRenderer do
   Max 5 lines, max 500 chars total.
   """
 
+  alias Kerto.Graph.RelationType
   alias Kerto.Rendering.Context
 
   @caution_relations [:breaks, :caused_by, :triggers]
@@ -19,15 +20,15 @@ defmodule Kerto.Rendering.HintRenderer do
   def render(contexts) when is_list(contexts) do
     contexts
     |> Enum.flat_map(&extract_hints/1)
-    |> Enum.uniq_by(fn {node_name, relation, other_name, _weight, _obs} ->
+    |> Enum.uniq_by(fn {node_name, relation, _label, other_name, _weight, _obs} ->
       {node_name, relation, other_name}
     end)
     |> sort_hints()
-    |> Enum.group_by(fn {node_name, _rel, _other, _w, _obs} -> node_name end)
+    |> Enum.group_by(fn {node_name, _rel, _label, _other, _w, _obs} -> node_name end)
     |> Enum.flat_map(fn {node_name, hints} ->
       parts =
-        Enum.map(hints, fn {_node_name, relation, other_name, weight, obs} ->
-          "#{relation} #{other_name} (#{format_float(weight)}, #{obs}x)"
+        Enum.map(hints, fn {_node_name, _relation, label, other_name, weight, obs} ->
+          "#{label} #{other_name} (#{format_float(weight)}, #{obs}x)"
         end)
 
       ["[kerto] #{node_name}: #{Enum.join(parts, " | ")}"]
@@ -57,12 +58,17 @@ defmodule Kerto.Rendering.HintRenderer do
           node -> node.name
         end
 
-      {ctx.node.name, rel.relation, other_name, rel.weight, rel.observations}
+      label =
+        if rel.source == ctx.node.id,
+          do: rel.relation,
+          else: RelationType.inverse_label(rel.relation)
+
+      {ctx.node.name, rel.relation, label, other_name, rel.weight, rel.observations}
     end)
   end
 
   defp sort_hints(hints) do
-    Enum.sort_by(hints, fn {_name, relation, _other, weight, _obs} ->
+    Enum.sort_by(hints, fn {_name, relation, _label, _other, weight, _obs} ->
       priority =
         cond do
           relation in @caution_relations -> 0

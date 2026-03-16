@@ -8,6 +8,7 @@ defmodule Kerto.Rendering.Renderer do
   Max 3 evidence items per relationship.
   """
 
+  alias Kerto.Graph.RelationType
   alias Kerto.Rendering.Context
 
   @caution_relations [:breaks, :caused_by, :triggers]
@@ -50,9 +51,10 @@ defmodule Kerto.Rendering.Renderer do
   defp render_relationship(rel, ctx) do
     other_id = other_node_id(rel, ctx.node.id)
     other_name = resolve_name(other_id, ctx.node_lookup)
+    label = relation_label(rel, ctx.node.id)
 
     header =
-      "  #{rel.relation} #{other_name} (weight #{format_float(rel.weight)}, #{rel.observations} observations)"
+      "  #{label} #{other_name} (weight #{format_float(rel.weight)}, #{rel.observations} observations)"
 
     evidence_lines =
       rel.evidence
@@ -60,6 +62,14 @@ defmodule Kerto.Rendering.Renderer do
       |> Enum.map_join("\n", fn ev -> "    \"#{ev}\"" end)
 
     header <> "\n" <> evidence_lines
+  end
+
+  defp relation_label(rel, focal_id) do
+    if rel.source == focal_id do
+      Atom.to_string(rel.relation)
+    else
+      RelationType.inverse_label(rel.relation)
+    end
   end
 
   defp other_node_id(rel, focal_id) do

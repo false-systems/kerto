@@ -30,6 +30,33 @@ defmodule Kerto.Graph.RelationTypeTest do
     end
   end
 
+  describe "inverse_label/1" do
+    test "breaks → broken by" do
+      assert RelationType.inverse_label(:breaks) == "broken by"
+    end
+
+    test "caused_by → causes" do
+      assert RelationType.inverse_label(:caused_by) == "causes"
+    end
+
+    test "triggers → triggered by" do
+      assert RelationType.inverse_label(:triggers) == "triggered by"
+    end
+
+    test "depends_on → depended on by" do
+      assert RelationType.inverse_label(:depends_on) == "depended on by"
+    end
+
+    test "part_of → contains" do
+      assert RelationType.inverse_label(:part_of) == "contains"
+    end
+
+    test "symmetric types return string of atom" do
+      assert RelationType.inverse_label(:often_changes_with) == "often_changes_with"
+      assert RelationType.inverse_label(:learned) == "learned"
+    end
+  end
+
   describe "all/0" do
     test "returns all eleven types" do
       assert length(RelationType.all()) == 11
