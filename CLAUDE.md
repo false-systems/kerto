@@ -6,11 +6,13 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 > Design docs at `docs/design/` (11 ADRs). Agent learning conventions at `.kerto/AGENT.md`.
 
+Elixir `~> 1.17`. Runtime deps: `jason` (JSON for MCP), `x509` (mTLS certs). Dev: `sykli_sdk`.
+
 ## Commands
 
 ```bash
-sykli                                    # CI: format → compile → test (also pre-commit hook via .sykli/)
-mix test                                 # all tests (734 tests, 0 failures)
+sykli                                    # CI: deps → format → compile → test (also pre-commit hook)
+mix test                                 # all tests (758 tests, 0 failures)
 mix test test/graph/node_test.exs        # single test file
 mix test test/graph/node_test.exs:42     # single test by line number
 mix format                               # format all files
@@ -54,6 +56,21 @@ External event (git commit, CI failure, agent discovery)
 
 Occurrence types map to extractors: `"vcs.commit"` → `Extractor.Commit`, `"ci.run.failed"` → `Extractor.CiFailure`, `"context.learning"` → `Extractor.Learning`, etc. To add a new extractor: add a clause in `Extraction.extract/1`, create the extractor module, write tests.
 
+## Engine Supervisor Tree (L2)
+
+`Kerto.Engine` is a Supervisor (`:one_for_one`) with 5 children in order:
+
+```
+Engine (Supervisor)
+├── OccurrenceLog  — ETS ring buffer (1024 cap), ULID-keyed for time ordering
+├── Store          — GenServer owning in-memory Graph, serializes mutations, ETF persistence
+├── Decay          — Timer GenServer (6h interval, 0.95 factor), calls Store.decay/2
+├── SessionRegistry — Tracks active agent sessions and touched files
+└── PluginRunner   — Periodic scanner (5min interval), per-plugin ULID sync points
+```
+
+All children are named `:"#{engine_name}.store"`, `:"#{engine_name}.log"`, etc. Engine also manages `:pg` groups for mesh peer notifications via `join_peer_group/2` and `leave_peer_group/2`.
+
 ## Interface Layer Pattern
 
 All transports (CLI, MCP/JSON-RPC, Unix socket) converge on the same path:
@@ -77,6 +94,8 @@ Plugins implement the `Kerto.Plugin` behaviour (`agent_name/0`, `scan/1`). Confi
 - **Content-addressed identity** — `Identity.compute_id(kind, name)` is BLAKE2b of kind+name. Same file = same node ID everywhere. Enables idempotent merging and distributed consistency.
 - **EWMA confidence** — weights are exponential weighted moving average (alpha 0.3). Reinforcement pulls toward observation, decay multiplies by 0.95 every 6h. Death thresholds: relationships < 0.05, nodes < 0.01 with no relationships.
 - **Pinned entities** — `pinned: true` on Node/Relationship exempts from decay and pruning. Set via `kerto pin`, cleared via `kerto unpin`.
+- **Initial relevance from confidence** — `Node.new/4` accepts optional confidence (default 0.5, range [0.0, 1.0]) for first insertion. `Graph.upsert_node` passes it through; subsequent observations use EWMA.
+- **Relationship directionality** — `RelationType.inverse_label/1` provides inverse labels (e.g. "breaks" → "broken by"). Renderers use these when the focal node is the target, not the source.
 
 ## Key Domain Concepts
 
@@ -84,17 +103,19 @@ Plugins implement the `Kerto.Plugin` behaviour (`agent_name/0`, `scan/1`). Confi
 |---------|--------|-------------|
 | EWMA | `Kerto.Graph.EWMA` | Weight math: update, decay, death check |
 | Identity | `Kerto.Graph.Identity` | Content-addressed ID (BLAKE2b) |
+| ULID | `Kerto.Graph.ULID` | Time-sortable unique IDs (pure L0, Crockford base-32) |
 | Node | `Kerto.Graph.Node` | Knowledge entity with relevance decay, pinning |
 | Relationship | `Kerto.Graph.Relationship` | Weighted edge with evidence list, pinning |
 | Graph | `Kerto.Graph.Graph` | Upsert, query, remove, pin/unpin, subgraph BFS, decay_all, prune |
 | NodeKind | `Kerto.Graph.NodeKind` | :file, :module, :pattern, :decision, :error, :concept |
-| RelationType | `Kerto.Graph.RelationType` | :breaks, :caused_by, :triggers, :deployed_to, etc. |
+| RelationType | `Kerto.Graph.RelationType` | :breaks, :caused_by, :triggers, :deployed_to, etc. + inverse_label/1 |
 | Extraction | `Kerto.Ingestion.Extraction` | Occurrence → ExtractionOps dispatcher |
 | Renderer | `Kerto.Rendering.Renderer` | Graph → natural language (Caution/Knowledge/Structure) |
 | Mesh.Identity | `Kerto.Mesh.Identity` | ECDSA P-256 keypairs, PEM, fingerprinting |
 | Mesh.Authority | `Kerto.Mesh.Authority` | Team CA: init, sign CSR, verify certs |
 | Mesh.Sync | `Kerto.Mesh.Sync` | Occurrence-based sync protocol, ULID sync points |
 | Mesh.Discovery | `Kerto.Mesh.Discovery` | mDNS + explicit peer management |
+| Mesh.PeerNaming | `Kerto.Mesh.PeerNaming` | Safe peer name validation (regex + 255-byte cap, avoids raw String.to_atom) |
 | Plugin | `Kerto.Plugin` | Behaviour for agent log readers (Claude, Logs) |
 
 ## Code Rules
@@ -112,7 +133,7 @@ Plugins implement the `Kerto.Plugin` behaviour (`agent_name/0`, `scan/1`). Confi
 
 - `IO.puts` in Level 0/1
 - Bare maps `%{}` for domain data
-- `String.to_atom/1` on user input
+- `String.to_atom/1` on user input (use `Mesh.PeerNaming` or `Validate` module)
 - `:ets` in Level 0 or Level 1
 - `try/rescue` in domain code
 - Mocking domain functions (they're pure — test directly)
