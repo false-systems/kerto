@@ -40,7 +40,7 @@ defmodule Kerto.Graph.Node do
 
   def new(kind, name, ulid, confidence)
       when is_atom(kind) and is_binary(name) and byte_size(name) > 0 and is_binary(ulid) and
-             is_float(confidence) do
+             is_float(confidence) and confidence >= 0.0 and confidence <= 1.0 do
     true = NodeKind.valid?(kind)
     canonical = Identity.canonicalize_name(kind, name)
 

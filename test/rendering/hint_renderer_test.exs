@@ -153,6 +153,28 @@ defmodule Kerto.Rendering.HintRendererTest do
       refute result =~ "breaks handler.ex"
     end
 
+    test "incoming caution relations still sort before coupling" do
+      source = make_node(:file, "handler.ex")
+      coupled = make_node(:file, "store.ex")
+
+      # handler.ex breaks auth.ex (incoming) — should still be caution priority
+      caution_rel =
+        make_rel(:file, "handler.ex", :breaks, :file, "auth.ex", weight: 0.5, observations: 1)
+
+      coupling_rel =
+        make_rel(:file, "auth.ex", :often_changes_with, :file, "store.ex",
+          weight: 0.9,
+          observations: 10
+        )
+
+      ctx = make_context(:file, "auth.ex", [coupling_rel, caution_rel], [source, coupled])
+
+      result = HintRenderer.render([ctx])
+      broken_pos = :binary.match(result, "broken by") |> elem(0)
+      coupling_pos = :binary.match(result, "often_changes_with") |> elem(0)
+      assert broken_pos < coupling_pos
+    end
+
     test "multiple relationships for same node joined with pipe" do
       target1 = make_node(:file, "deploy.sh")
       target2 = make_node(:concept, "cache-bug")
