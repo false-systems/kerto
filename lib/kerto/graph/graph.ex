@@ -32,7 +32,7 @@ defmodule Kerto.Graph.Graph do
 
     case Map.get(graph.nodes, id) do
       nil ->
-        node = Node.new(kind, name, ulid)
+        node = Node.new(kind, name, ulid, confidence)
         {%{graph | nodes: Map.put(graph.nodes, id, node)}, node}
 
       existing ->
