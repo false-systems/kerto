@@ -35,9 +35,12 @@ defmodule Kerto.Graph.Node do
 
   @node_death_threshold 0.01
 
-  @spec new(atom(), String.t(), String.t()) :: t()
-  def new(kind, name, ulid)
-      when is_atom(kind) and is_binary(name) and byte_size(name) > 0 and is_binary(ulid) do
+  @spec new(atom(), String.t(), String.t(), float()) :: t()
+  def new(kind, name, ulid, confidence \\ 0.5)
+
+  def new(kind, name, ulid, confidence)
+      when is_atom(kind) and is_binary(name) and byte_size(name) > 0 and is_binary(ulid) and
+             is_float(confidence) do
     true = NodeKind.valid?(kind)
     canonical = Identity.canonicalize_name(kind, name)
 
@@ -45,7 +48,7 @@ defmodule Kerto.Graph.Node do
       id: Identity.compute_id(kind, name),
       name: canonical,
       kind: kind,
-      relevance: 0.5,
+      relevance: confidence,
       observations: 1,
       first_seen: ulid,
       last_seen: ulid,

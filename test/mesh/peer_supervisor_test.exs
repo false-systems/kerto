@@ -6,6 +6,11 @@ defmodule Kerto.Mesh.PeerSupervisorTest do
   @engine :test_ps_engine
 
   setup do
+    case :pg.start(:pg) do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+    end
+
     start_supervised!(
       {Kerto.Engine,
        name: @engine,

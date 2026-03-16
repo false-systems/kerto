@@ -141,6 +141,18 @@ defmodule Kerto.Rendering.HintRendererTest do
       assert breaks_pos < coupling_pos
     end
 
+    test "incoming relationship uses inverse label" do
+      source = make_node(:file, "handler.ex")
+      # handler.ex breaks auth.ex — auth.ex is the target
+      rel = make_rel(:file, "handler.ex", :breaks, :file, "auth.ex", weight: 0.8, observations: 2)
+      ctx = make_context(:file, "auth.ex", [rel], [source])
+
+      result = HintRenderer.render([ctx])
+      assert result =~ "broken by"
+      assert result =~ "handler.ex"
+      refute result =~ "breaks handler.ex"
+    end
+
     test "multiple relationships for same node joined with pipe" do
       target1 = make_node(:file, "deploy.sh")
       target2 = make_node(:concept, "cache-bug")

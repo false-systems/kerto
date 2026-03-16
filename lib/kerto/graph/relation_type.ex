@@ -25,4 +25,13 @@ defmodule Kerto.Graph.RelationType do
   @spec valid?(term()) :: boolean()
   def valid?(type) when type in @types, do: true
   def valid?(_), do: false
+
+  @spec inverse_label(atom()) :: String.t()
+  def inverse_label(:breaks), do: "broken by"
+  def inverse_label(:caused_by), do: "causes"
+  def inverse_label(:triggers), do: "triggered by"
+  def inverse_label(:depends_on), do: "depended on by"
+  def inverse_label(:part_of), do: "contains"
+  def inverse_label(:deployed_to), do: "deploys"
+  def inverse_label(type) when type in @types, do: Atom.to_string(type)
 end

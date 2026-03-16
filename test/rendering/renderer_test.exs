@@ -232,7 +232,7 @@ defmodule Kerto.Rendering.RendererTest do
       assert length(evidence_lines) <= 3
     end
 
-    test "renders incoming relationships (node is target)" do
+    test "renders incoming relationships with inverse label (node is target)" do
       auth = file_node("auth.go")
       other = file_node("handler.go")
 
@@ -243,7 +243,9 @@ defmodule Kerto.Rendering.RendererTest do
       output = Renderer.render(ctx)
 
       assert output =~ "Caution"
+      assert output =~ "broken by"
       assert output =~ "handler.go"
+      refute output =~ "  breaks handler.go"
     end
 
     test "renders observations count" do

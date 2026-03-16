@@ -44,6 +44,8 @@ defmodule Kerto.Mesh.Peer do
     my_node = Keyword.get(opts, :my_node, to_string(Node.self()))
     poll_interval_ms = Keyword.get(opts, :poll_interval_ms, 100)
 
+    Engine.join_peer_group(engine, self())
+
     state = %{
       peer_node: peer_node,
       my_node: my_node,
@@ -57,6 +59,12 @@ defmodule Kerto.Mesh.Peer do
     }
 
     {:ok, state}
+  end
+
+  @impl true
+  def terminate(_reason, state) do
+    Engine.leave_peer_group(state.engine, self())
+    :ok
   end
 
   @impl true

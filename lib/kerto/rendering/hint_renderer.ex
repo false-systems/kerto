@@ -7,6 +7,7 @@ defmodule Kerto.Rendering.HintRenderer do
   Max 5 lines, max 500 chars total.
   """
 
+  alias Kerto.Graph.RelationType
   alias Kerto.Rendering.Context
 
   @caution_relations [:breaks, :caused_by, :triggers]
@@ -57,7 +58,12 @@ defmodule Kerto.Rendering.HintRenderer do
           node -> node.name
         end
 
-      {ctx.node.name, rel.relation, other_name, rel.weight, rel.observations}
+      label =
+        if rel.source == ctx.node.id,
+          do: rel.relation,
+          else: RelationType.inverse_label(rel.relation)
+
+      {ctx.node.name, label, other_name, rel.weight, rel.observations}
     end)
   end
 

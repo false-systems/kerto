@@ -26,6 +26,11 @@ defmodule Kerto.Graph.GraphTest do
       assert node.kind == :file
     end
 
+    test "first insertion uses confidence as initial relevance", %{graph: graph} do
+      {_graph, node} = Graph.upsert_node(graph, :file, "auth.go", 0.9, "01JABC")
+      assert node.relevance == 0.9
+    end
+
     test "deduplicates by content address", %{graph: graph} do
       {graph, _node} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01JABC")
       {graph, _node} = Graph.upsert_node(graph, :file, "auth.go", 0.9, "01JDEF")
@@ -153,8 +158,8 @@ defmodule Kerto.Graph.GraphTest do
       decayed = Graph.decay_all(graph, 0.5)
 
       {:ok, node} = Graph.get_node(decayed, source_id)
-      # Initial relevance 0.5 * decay 0.5 = 0.25
-      assert_in_delta node.relevance, 0.25, 0.001
+      # Initial relevance 0.8 * decay 0.5 = 0.4
+      assert_in_delta node.relevance, 0.4, 0.001
     end
 
     test "prunes dead relationships", %{graph: graph} do
@@ -383,8 +388,8 @@ defmodule Kerto.Graph.GraphTest do
 
       decayed = Graph.decay_all(graph, 0.5)
       {:ok, node} = Graph.get_node(decayed, id)
-      # Pinned node should retain original relevance (0.5 from new)
-      assert_in_delta node.relevance, 0.5, 0.001
+      # Pinned node should retain original relevance (0.8 from upsert confidence)
+      assert_in_delta node.relevance, 0.8, 0.001
     end
 
     test "skips decay on pinned relationships", %{graph: graph} do
@@ -460,16 +465,16 @@ defmodule Kerto.Graph.GraphTest do
     end
 
     test "filters by below threshold", %{graph: graph} do
-      # Node.new always starts at 0.5, so we need to decay one down
-      {graph, _} = Graph.upsert_node(graph, :file, "low.go", 0.8, "01J001")
+      # low.go starts with confidence 0.3, high.go with 0.9 (observed twice)
+      {graph, _} = Graph.upsert_node(graph, :file, "low.go", 0.3, "01J001")
       {graph, _} = Graph.upsert_node(graph, :file, "high.go", 0.9, "01J002")
       {graph, _} = Graph.upsert_node(graph, :file, "high.go", 0.9, "01J003")
 
-      # Decay all to push "low.go" (observed once, relevance 0.5) down
+      # Decay all to push "low.go" (relevance 0.3) down
       graph = Enum.reduce(1..5, graph, fn _, g -> Graph.decay_all(g, 0.8) end)
 
-      # After 5 rounds at 0.8: 0.5 * 0.8^5 ≈ 0.164, high.go was observed twice so higher
-      nodes = Graph.list_nodes(graph, below: 0.2)
+      # After 5 rounds at 0.8: 0.3 * 0.8^5 ≈ 0.098, high.go was observed twice so higher
+      nodes = Graph.list_nodes(graph, below: 0.15)
       assert length(nodes) == 1
       assert hd(nodes).name == "low.go"
     end
