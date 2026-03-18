@@ -103,7 +103,7 @@ Level 3: Mesh            — mTLS identity, sync protocol, peer discovery
 Level 4: Interface       — CLI, MCP server, application
 ```
 
-243 tests. Zero `map[string]interface{}` equivalent. Dependencies point inward — no exceptions.
+756 tests. Zero `map[string]interface{}` equivalent. Dependencies point inward — no exceptions.
 
 ## License
 
