@@ -26,6 +26,7 @@ defmodule Kerto.Interface.Dispatcher do
     "pin" => Command.Pin,
     "unpin" => Command.Unpin,
     "list" => Command.List,
+    "grep" => Command.Grep,
     "scan" => Command.Scan,
     "team" => Command.Team,
     "mesh" => Command.Mesh

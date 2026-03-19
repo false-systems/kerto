@@ -86,6 +86,7 @@ defmodule Kerto.Interface.Parser do
       relation: :string
     ],
     "scan" => [],
+    "grep" => [kind: :string, type: :string, relation: :string, evidence: :boolean],
     "team" => [action: :string, name: :string, csr: :string],
     "mesh" => [action: :string, peer: :string]
   }
@@ -124,6 +125,7 @@ defmodule Kerto.Interface.Parser do
   defp add_positional(args, "context", [name | _]), do: Map.put(args, :name, name)
   defp add_positional(args, "learn", [evidence | _]), do: Map.put(args, :evidence, evidence)
   defp add_positional(args, "decide", [evidence | _]), do: Map.put(args, :evidence, evidence)
+  defp add_positional(args, "grep", [pattern | _]), do: Map.put(args, :pattern, pattern)
   defp add_positional(args, _command, _positional), do: args
 
   defp atomize_fields(args) do

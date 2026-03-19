@@ -3,7 +3,7 @@ defmodule Kerto.Interface.Command.List do
   Lists nodes or relationships with optional filters.
   """
 
-  alias Kerto.Interface.{Response, Validate}
+  alias Kerto.Interface.{Response, Serialize, Validate}
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, args) do
@@ -23,7 +23,7 @@ defmodule Kerto.Interface.Command.List do
 
       opts ->
         nodes = Kerto.Engine.list_nodes(engine, opts)
-        Response.success(format_nodes(nodes))
+        Response.success(%{nodes: Enum.map(nodes, &Serialize.node_to_map/1)})
     end
   end
 
@@ -36,7 +36,8 @@ defmodule Kerto.Interface.Command.List do
 
       opts ->
         rels = Kerto.Engine.list_relationships(engine, opts)
-        Response.success(format_relationships(rels))
+        graph = Kerto.Engine.get_graph(engine)
+        Response.success(%{relationships: Enum.map(rels, &Serialize.rel_to_map(&1, graph.nodes))})
     end
   end
 
@@ -107,37 +108,4 @@ defmodule Kerto.Interface.Command.List do
         opts
     end
   end
-
-  defp format_nodes([]), do: "No nodes found."
-
-  defp format_nodes(nodes) do
-    header = "#{length(nodes)} node(s):\n"
-
-    rows =
-      Enum.map_join(nodes, "\n", fn node ->
-        pin = if node.pinned, do: " [pinned]", else: ""
-
-        "  #{node.kind}:#{node.name}  relevance=#{Float.round(node.relevance, 3)}  obs=#{node.observations}#{pin}"
-      end)
-
-    header <> rows
-  end
-
-  defp format_relationships([]), do: "No relationships found."
-
-  defp format_relationships(rels) do
-    header = "#{length(rels)} relationship(s):\n"
-
-    rows =
-      Enum.map_join(rels, "\n", fn rel ->
-        pin = if rel.pinned, do: " [pinned]", else: ""
-
-        "  #{short_id(rel.source)} --#{rel.relation}--> #{short_id(rel.target)}  weight=#{Float.round(rel.weight, 3)}  obs=#{rel.observations}#{pin}"
-      end)
-
-    header <> rows
-  end
-
-  defp short_id(id) when byte_size(id) > 8, do: String.slice(id, 0, 8) <> ".."
-  defp short_id(id), do: id
 end

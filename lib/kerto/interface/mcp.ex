@@ -198,6 +198,27 @@ defmodule Kerto.Interface.MCP do
       inputSchema: %{type: "object", properties: %{}}
     },
     %{
+      name: "kerto_grep",
+      description: "Search nodes or relationships by name/evidence substring",
+      inputSchema: %{
+        type: "object",
+        properties: %{
+          pattern: %{type: "string", description: "Search pattern (case-insensitive substring)"},
+          kind: %{type: "string", description: "Filter nodes by kind"},
+          evidence: %{
+            type: "boolean",
+            description: "Search relationship evidence instead of node names"
+          },
+          type: %{
+            type: "string",
+            description: "Search type: nodes or rels (default: nodes)"
+          },
+          relation: %{type: "string", description: "Filter by relation type (relationships only)"}
+        },
+        required: ["pattern"]
+      }
+    },
+    %{
       name: "kerto_list",
       description: "List nodes or relationships with optional filters",
       inputSchema: %{
@@ -228,6 +249,7 @@ defmodule Kerto.Interface.MCP do
     "kerto_forget" => "forget",
     "kerto_pin" => "pin",
     "kerto_unpin" => "unpin",
+    "kerto_grep" => "grep",
     "kerto_list" => "list",
     "kerto_scan" => "scan",
     "kerto_team" => "team",

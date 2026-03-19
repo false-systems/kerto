@@ -3,7 +3,8 @@ defmodule Kerto.Interface.Command.Context do
   Queries the knowledge graph for an entity and returns rendered context.
   """
 
-  alias Kerto.Interface.{Response, Suggest, Validate}
+  alias Kerto.Interface.{Response, Serialize, Suggest, Validate}
+  alias Kerto.Rendering.Renderer
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, args) do
@@ -14,9 +15,17 @@ defmodule Kerto.Interface.Command.Context do
     else
       with {:ok, kind} <- Validate.node_kind(Map.get(args, :kind, :file)),
            {:ok, opts} <- build_opts(args) do
-        case Kerto.Engine.context(engine, kind, name, opts) do
-          {:ok, text} -> Response.success(text)
-          {:error, :not_found} -> Response.error(not_found_message(engine, kind, name))
+        case Kerto.Engine.context_data(engine, kind, name, opts) do
+          {:ok, ctx} ->
+            Response.success(%{
+              node: Serialize.node_to_map(ctx.node),
+              relationships:
+                Enum.map(ctx.relationships, &Serialize.rel_to_map(&1, ctx.node_lookup)),
+              rendered: Renderer.render(ctx)
+            })
+
+          {:error, :not_found} ->
+            Response.error(not_found_message(engine, kind, name))
         end
       else
         {:error, reason} -> Response.error(reason)

@@ -81,7 +81,8 @@ defmodule Kerto.Interface.DaemonTest do
 
     {:ok, response} = send_command(path, "context", %{name: "router.go", kind: "file"})
     assert response["ok"] == true
-    assert response["data"] =~ "router.go"
+    assert response["data"]["node"]["name"] == "router.go"
+    assert is_binary(response["data"]["rendered"])
   end
 
   test "cleans up socket file on terminate", %{socket_path: path} do

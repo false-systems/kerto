@@ -4,7 +4,7 @@ defmodule Kerto.Interface.Command.Graph do
   """
 
   alias Kerto.Graph.Graph
-  alias Kerto.Interface.Response
+  alias Kerto.Interface.{Response, Serialize}
 
   @spec execute(atom(), map()) :: Response.t()
   def execute(engine, args) do
@@ -22,12 +22,12 @@ defmodule Kerto.Interface.Command.Graph do
     nodes =
       graph.nodes
       |> Map.values()
-      |> Enum.map(&node_to_map/1)
+      |> Enum.map(&Serialize.node_to_map/1)
 
     relationships =
       graph.relationships
       |> Map.values()
-      |> Enum.map(&rel_to_map/1)
+      |> Enum.map(&Serialize.rel_to_map(&1, graph.nodes))
 
     %{nodes: nodes, relationships: relationships}
   end
@@ -51,28 +51,5 @@ defmodule Kerto.Interface.Command.Graph do
       nil -> id
       node -> node.name
     end
-  end
-
-  defp node_to_map(node) do
-    %{
-      id: node.id,
-      name: node.name,
-      kind: node.kind,
-      relevance: node.relevance,
-      observations: node.observations,
-      first_seen: node.first_seen,
-      last_seen: node.last_seen
-    }
-  end
-
-  defp rel_to_map(rel) do
-    %{
-      source: rel.source,
-      target: rel.target,
-      relation: rel.relation,
-      weight: rel.weight,
-      observations: rel.observations,
-      evidence: rel.evidence
-    }
   end
 end

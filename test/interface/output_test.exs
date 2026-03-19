@@ -39,15 +39,52 @@ defmodule Kerto.Interface.OutputTest do
       assert output =~ "not_found"
     end
 
-    test "formats success with graph data" do
-      graph_data = %{
-        nodes: [%{name: "auth.go", kind: :file, relevance: 0.8, observations: 5}],
-        relationships: [%{source: "a1", target: "b2", relation: :breaks, weight: 0.7}]
+    test "formats success with node list data" do
+      node_data = %{
+        nodes: [
+          %{name: "auth.go", kind: "file", relevance: 0.8, observations: 5, pinned: false}
+        ]
       }
 
-      resp = Response.success(graph_data)
+      resp = Response.success(node_data)
       output = capture_io(fn -> Output.print(resp, :text) end)
       assert output =~ "auth.go"
+      assert output =~ "1 node(s)"
+    end
+
+    test "formats success with relationship list data" do
+      rel_data = %{
+        relationships: [
+          %{
+            source: "a1",
+            target: "b2",
+            source_name: "auth.go",
+            target_name: "test.go",
+            relation: "breaks",
+            weight: 0.7,
+            observations: 1,
+            pinned: false
+          }
+        ]
+      }
+
+      resp = Response.success(rel_data)
+      output = capture_io(fn -> Output.print(resp, :text) end)
+      assert output =~ "auth.go"
+      assert output =~ "breaks"
+      assert output =~ "1 relationship(s)"
+    end
+
+    test "formats success with context data" do
+      ctx_data = %{
+        node: %{name: "auth.go", kind: "file"},
+        relationships: [],
+        rendered: "auth.go (file) — relevance 0.80"
+      }
+
+      resp = Response.success(ctx_data)
+      output = capture_io(fn -> Output.print(resp, :text) end)
+      assert output =~ "auth.go (file)"
     end
   end
 
@@ -80,6 +117,20 @@ defmodule Kerto.Interface.OutputTest do
       output = capture_io(fn -> Output.print(resp, :json) end)
       decoded = Jason.decode!(output)
       assert decoded["error"] == "not_found"
+    end
+
+    test "preserves booleans and nil in JSON output" do
+      resp =
+        Response.success(%{
+          nodes: [%{name: "auth.go", kind: :file, pinned: false, summary: nil}]
+        })
+
+      output = capture_io(fn -> Output.print(resp, :json) end)
+      decoded = Jason.decode!(output)
+      node = hd(decoded["data"]["nodes"])
+      assert node["pinned"] == false
+      assert node["summary"] == nil
+      assert node["kind"] == "file"
     end
   end
 end
