@@ -12,7 +12,7 @@ Elixir `~> 1.17`. Runtime deps: `jason` (JSON for MCP), `x509` (mTLS certs). Dev
 
 ```bash
 sykli                                    # CI: deps → format → compile → test (also pre-commit hook)
-mix test                                 # all tests (758 tests, 0 failures)
+mix test                                 # all tests (795 tests, 0 failures)
 mix test test/graph/node_test.exs        # single test file
 mix test test/graph/node_test.exs:42     # single test by line number
 mix format                               # format all files
@@ -83,7 +83,9 @@ Commands never do IO. They receive an engine atom + args map, return `Response.t
 
 MCP tools are defined in `Interface.MCP` — each maps to a command: `kerto_context` → `Command.Context`, `kerto_learn` → `Command.Learn`, etc.
 
-Commands include: `init`, `start`, `stop`, `status`, `context`, `learn`, `decide`, `observe`, `ingest`, `graph`, `hint`, `bootstrap`, `scan`, `forget`, `pin`, `unpin`, `list`, `mesh`, `team`.
+Commands include: `init`, `start`, `stop`, `status`, `context`, `learn`, `decide`, `observe`, `ingest`, `graph`, `grep`, `hint`, `bootstrap`, `scan`, `forget`, `pin`, `unpin`, `list`, `mesh`, `team`.
+
+Commands that return structured data (`list`, `context`, `grep`) use `Serialize` for node/rel → map conversion. In text mode, `Output` formats these; in JSON mode, the maps pass through directly. The `graph` command also uses `Serialize` for its JSON dump.
 
 ## Plugin System
 
@@ -106,7 +108,7 @@ Plugins implement the `Kerto.Plugin` behaviour (`agent_name/0`, `scan/1`). Confi
 | ULID | `Kerto.Graph.ULID` | Time-sortable unique IDs (pure L0, Crockford base-32) |
 | Node | `Kerto.Graph.Node` | Knowledge entity with relevance decay, pinning |
 | Relationship | `Kerto.Graph.Relationship` | Weighted edge with evidence list, pinning |
-| Graph | `Kerto.Graph.Graph` | Upsert, query, remove, pin/unpin, subgraph BFS, decay_all, prune |
+| Graph | `Kerto.Graph.Graph` | Upsert, query, remove, pin/unpin, subgraph BFS, search, decay_all, prune |
 | NodeKind | `Kerto.Graph.NodeKind` | :file, :module, :pattern, :decision, :error, :concept |
 | RelationType | `Kerto.Graph.RelationType` | :breaks, :caused_by, :triggers, :deployed_to, etc. + inverse_label/1 |
 | Extraction | `Kerto.Ingestion.Extraction` | Occurrence → ExtractionOps dispatcher |
@@ -116,6 +118,7 @@ Plugins implement the `Kerto.Plugin` behaviour (`agent_name/0`, `scan/1`). Confi
 | Mesh.Sync | `Kerto.Mesh.Sync` | Occurrence-based sync protocol, ULID sync points |
 | Mesh.Discovery | `Kerto.Mesh.Discovery` | mDNS + explicit peer management |
 | Mesh.PeerNaming | `Kerto.Mesh.PeerNaming` | Safe peer name validation (regex + 255-byte cap, avoids raw String.to_atom) |
+| Serialize | `Kerto.Interface.Serialize` | Shared node/rel → JSON-safe map conversion |
 | Plugin | `Kerto.Plugin` | Behaviour for agent log readers (Claude, Logs) |
 
 ## Code Rules
