@@ -18,17 +18,20 @@ defmodule Kerto.Interface.Command.ContextTest do
     %{engine: :test_ctx_engine}
   end
 
-  test "returns rendered context for known entity", %{engine: engine} do
+  test "returns structured context for known entity", %{engine: engine} do
     resp = Context.execute(engine, %{name: "auth.go", kind: :file})
     assert resp.ok
-    assert resp.data =~ "auth.go"
-    assert resp.data =~ "file"
+    assert resp.data.node.name == "auth.go"
+    assert resp.data.node.kind == "file"
+    assert is_list(resp.data.relationships)
+    assert is_binary(resp.data.rendered)
+    assert resp.data.rendered =~ "auth.go"
   end
 
   test "defaults kind to :file", %{engine: engine} do
     resp = Context.execute(engine, %{name: "auth.go"})
     assert resp.ok
-    assert resp.data =~ "auth.go"
+    assert resp.data.node.name == "auth.go"
   end
 
   test "returns error for unknown entity with hint", %{engine: engine} do
@@ -48,11 +51,23 @@ defmodule Kerto.Interface.Command.ContextTest do
   test "passes depth and min_weight options", %{engine: engine} do
     resp = Context.execute(engine, %{name: "auth.go", kind: :file, depth: 1, min_weight: 0.0})
     assert resp.ok
+    assert resp.data.node.name == "auth.go"
   end
 
   test "returns error when name is missing", %{engine: engine} do
     resp = Context.execute(engine, %{})
     refute resp.ok
     assert resp.error =~ "name"
+  end
+
+  test "relationship maps include source and target names", %{engine: engine} do
+    resp = Context.execute(engine, %{name: "auth.go", kind: :file, depth: 2})
+    assert resp.ok
+
+    Enum.each(resp.data.relationships, fn rel ->
+      assert Map.has_key?(rel, :source_name)
+      assert Map.has_key?(rel, :target_name)
+      assert is_binary(rel.relation)
+    end)
   end
 end

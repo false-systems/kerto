@@ -588,4 +588,135 @@ defmodule Kerto.Graph.GraphTest do
       assert {^graph, :error} = Graph.delete_relationship(graph, {"x", :breaks, "y"})
     end
   end
+
+  describe "search_nodes/3" do
+    test "finds nodes by case-insensitive substring match", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "AUTH_test.go", 0.6, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "session.go", 0.7, "01J001")
+
+      results = Graph.search_nodes(graph, "auth")
+      assert length(results) == 2
+      names = Enum.map(results, & &1.name)
+      assert "auth.go" in names
+      assert "AUTH_test.go" in names
+    end
+
+    test "returns empty list when no match", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01J001")
+      assert Graph.search_nodes(graph, "zzz") == []
+    end
+
+    test "filters by kind", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :module, "auth_module", 0.6, "01J001")
+
+      results = Graph.search_nodes(graph, "auth", kind: :file)
+      assert length(results) == 1
+      assert hd(results).kind == :file
+    end
+
+    test "sorts by relevance descending", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.3, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "auth_test.go", 0.9, "01J001")
+
+      results = Graph.search_nodes(graph, "auth")
+      assert hd(results).name == "auth_test.go"
+    end
+
+    test "matches empty pattern returns all nodes", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "auth.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "session.go", 0.7, "01J001")
+
+      results = Graph.search_nodes(graph, "")
+      assert length(results) == 2
+    end
+  end
+
+  describe "search_relationships/3" do
+    test "finds relationships by evidence text match", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "c.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      c = Identity.compute_id(:file, "c.go")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "OOM in auth handler")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :depends_on, c, 0.8, "01J001", "imports session")
+
+      results = Graph.search_relationships(graph, "OOM")
+      assert length(results) == 1
+      assert hd(results).relation == :breaks
+    end
+
+    test "case-insensitive evidence search", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "OOM Error")
+
+      results = Graph.search_relationships(graph, "oom")
+      assert length(results) == 1
+    end
+
+    test "filters by relation type", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "c.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      c = Identity.compute_id(:file, "c.go")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "test failure")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :depends_on, c, 0.8, "01J001", "test import")
+
+      results = Graph.search_relationships(graph, "test", relation: :breaks)
+      assert length(results) == 1
+      assert hd(results).relation == :breaks
+    end
+
+    test "returns empty list when no evidence matches", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "CI failed")
+
+      assert Graph.search_relationships(graph, "zzz") == []
+    end
+
+    test "sorts by weight descending", %{graph: graph} do
+      {graph, _} = Graph.upsert_node(graph, :file, "a.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "b.go", 0.8, "01J001")
+      {graph, _} = Graph.upsert_node(graph, :file, "c.go", 0.8, "01J001")
+      a = Identity.compute_id(:file, "a.go")
+      b = Identity.compute_id(:file, "b.go")
+      c = Identity.compute_id(:file, "c.go")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :breaks, b, 0.8, "01J001", "test failure")
+
+      # Reinforce second rel to give it higher weight
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :depends_on, c, 0.8, "01J001", "test import")
+
+      {graph, _} =
+        Graph.upsert_relationship(graph, a, :depends_on, c, 0.9, "01J002", "test reuse")
+
+      results = Graph.search_relationships(graph, "test")
+      assert hd(results).relation == :depends_on
+    end
+  end
 end

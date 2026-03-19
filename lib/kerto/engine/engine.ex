@@ -191,6 +191,25 @@ defmodule Kerto.Engine do
     end
   end
 
+  @spec context_data(atom(), atom(), String.t(), keyword()) ::
+          {:ok, Kerto.Rendering.Context.t()} | {:error, :not_found}
+  def context_data(engine \\ __MODULE__, kind, name, opts \\ []) do
+    graph = get_graph(engine)
+    Kerto.Rendering.Query.query_context(graph, kind, name, "", opts)
+  end
+
+  @spec search_nodes(atom(), String.t(), keyword()) :: [Kerto.Graph.Node.t()]
+  def search_nodes(engine \\ __MODULE__, pattern, opts \\ []) do
+    graph = get_graph(engine)
+    Kerto.Graph.Graph.search_nodes(graph, pattern, opts)
+  end
+
+  @spec search_relationships(atom(), String.t(), keyword()) :: [Kerto.Graph.Relationship.t()]
+  def search_relationships(engine \\ __MODULE__, pattern, opts \\ []) do
+    graph = get_graph(engine)
+    Kerto.Graph.Graph.search_relationships(graph, pattern, opts)
+  end
+
   @spec status(atom()) :: map()
   def status(engine \\ __MODULE__) do
     %{

@@ -8,7 +8,7 @@ defmodule Kerto.Interface.Protocol do
   @known_arg_keys ~w(
     kind name depth min_weight subject target relation
     subject_kind target_kind confidence evidence type data
-    source format factor node
+    source format factor node pattern
     json summary files
     agent session file
   )a
@@ -82,6 +82,7 @@ defmodule Kerto.Interface.Protocol do
   end
 
   defp serialize(:ok), do: "ok"
+  defp serialize(val) when val in [nil, true, false], do: val
   defp serialize(val) when is_atom(val), do: Atom.to_string(val)
 
   defp serialize(val) when is_map(val) do

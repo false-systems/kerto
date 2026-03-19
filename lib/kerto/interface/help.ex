@@ -191,6 +191,23 @@ defmodule Kerto.Interface.Help do
         "kerto unpin --node auth.go"
       ]
     },
+    "grep" => %{
+      description: "Search nodes or relationships by name/evidence substring",
+      usage: "kerto grep <pattern> [flags]",
+      flags: [
+        {"--kind <kind>", "Filter nodes by kind (nodes only)"},
+        {"--evidence", "Search relationship evidence instead of node names"},
+        {"--type <type>", "Search type: nodes or rels (default: nodes)"},
+        {"--relation <rel>", "Filter by relation type (relationships only)"}
+      ],
+      examples: [
+        "kerto grep auth",
+        "kerto grep auth --kind file",
+        ~s(kerto grep "OOM" --evidence),
+        "kerto grep breaks --type rels",
+        "kerto grep auth --json"
+      ]
+    },
     "list" => %{
       description: "List nodes or relationships with optional filters",
       usage: "kerto list [--type nodes|relationships] [flags]",

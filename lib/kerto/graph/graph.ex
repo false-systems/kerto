@@ -250,6 +250,41 @@ defmodule Kerto.Graph.Graph do
     end
   end
 
+  @spec search_nodes(t(), String.t(), keyword()) :: [Node.t()]
+  def search_nodes(%__MODULE__{nodes: nodes}, pattern, opts \\ []) when is_binary(pattern) do
+    kind = Keyword.get(opts, :kind)
+    downcased = String.downcase(pattern)
+
+    nodes
+    |> Map.values()
+    |> Enum.filter(fn node ->
+      String.contains?(String.downcase(node.name), downcased) and
+        (is_nil(kind) or node.kind == kind)
+    end)
+    |> Enum.sort_by(& &1.relevance, :desc)
+  end
+
+  @spec search_relationships(t(), String.t(), keyword()) :: [Relationship.t()]
+  def search_relationships(%__MODULE__{relationships: rels}, pattern, opts \\ [])
+      when is_binary(pattern) do
+    relation = Keyword.get(opts, :relation)
+    downcased = String.downcase(pattern)
+
+    rels
+    |> Map.values()
+    |> Enum.filter(fn rel ->
+      evidence_matches?(rel.evidence, downcased) and
+        (is_nil(relation) or rel.relation == relation)
+    end)
+    |> Enum.sort_by(& &1.weight, :desc)
+  end
+
+  defp evidence_matches?(evidence, pattern) do
+    Enum.any?(evidence, fn text ->
+      String.contains?(String.downcase(text), pattern)
+    end)
+  end
+
   @spec decay_all(t(), float()) :: t()
   def decay_all(%__MODULE__{} = graph, factor) when is_float(factor) do
     nodes =

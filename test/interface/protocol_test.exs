@@ -21,6 +21,20 @@ defmodule Kerto.Interface.ProtocolTest do
       decoded = Jason.decode!(json)
       assert decoded["data"] == "ok"
     end
+
+    test "preserves booleans and nil in structured data" do
+      resp =
+        Response.success(%{
+          nodes: [%{name: "auth.go", kind: :file, pinned: false, summary: nil}]
+        })
+
+      json = Protocol.encode_response(resp)
+      decoded = Jason.decode!(json)
+      node = hd(decoded["data"]["nodes"])
+      assert node["pinned"] == false
+      assert node["summary"] == nil
+      assert node["kind"] == "file"
+    end
   end
 
   describe "decode_request/1" do

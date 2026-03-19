@@ -23,11 +23,11 @@ defmodule Kerto.Interface.MCPTest do
   end
 
   describe "handle_message/3 tools/list" do
-    test "returns all 15 tools", %{engine: engine} do
+    test "returns all 16 tools", %{engine: engine} do
       msg = %{"jsonrpc" => "2.0", "id" => 2, "method" => "tools/list"}
       result = MCP.handle_message(msg, engine, nil)
       tools = result.result.tools
-      assert length(tools) == 15
+      assert length(tools) == 16
 
       names = Enum.map(tools, & &1.name)
       assert "kerto_context" in names
